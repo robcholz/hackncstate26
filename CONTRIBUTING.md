@@ -12,3 +12,9 @@ Best Commit Format:
 - documents: `doc: <description>`
 - ci: `ci: <description>`
 
+use this frequently to keep sync with the remote!
+
+```shell
+git fetch
+```
+
