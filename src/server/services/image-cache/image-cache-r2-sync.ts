@@ -35,6 +35,10 @@ export function createImageCacheR2Hooks(r2: CloudflareR2Api, options: ImageCache
   };
 
   const syncDelete = (entry: ImageCacheEntry, reason: CacheRemoveReason): void => {
+    if (reason === "updated") {
+      return;
+    }
+
     void r2.deleteImage(entry.link).catch((error) => {
       onError(error, { operation: "delete", link: entry.link, reason });
     });
@@ -49,11 +53,11 @@ export function createImageCacheR2Hooks(r2: CloudflareR2Api, options: ImageCache
 export function createImageCacheWithR2Sync(r2: CloudflareR2Api, options: ImageCacheR2SyncOptions = {}): ImageCacheApi {
   const cache = createImageCache(createImageCacheR2Hooks(r2, options));
 
-  if (options.refreshTimeoutMs) {
+  if (options.refreshTimeoutMs !== undefined) {
     cache.setRefreshTimeout(options.refreshTimeoutMs);
   }
 
-  if (options.maxSize) {
+  if (options.maxSize !== undefined) {
     cache.setCacheMaxSize(options.maxSize);
   }
 
