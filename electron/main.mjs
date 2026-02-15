@@ -141,7 +141,7 @@ function openInRealBrowser(url) {
   // recursion when Phishing Lens is set as the default handler for http/https.
   if (process.platform === "darwin") {
     try {
-      const child = spawn("open", ["-a", "Safari", url], {
+      const child = spawn("/usr/bin/open", ["-a", "Safari", url], {
         stdio: "ignore",
         detached: true
       });
