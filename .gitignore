@@ -12,6 +12,7 @@ renderer-server/.venv
 renderer-server/.venv*/
 renderer-server/test.cover
 renderer-server/__pycache__
+renderer-server/screenshot.png
 venv
 targets
 out/

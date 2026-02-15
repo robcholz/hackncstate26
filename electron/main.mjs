@@ -112,7 +112,7 @@ function createMainWindow() {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url).catch(() => {});
+    openInRealBrowser(url);
     return { action: "deny" };
   });
 
@@ -120,7 +120,7 @@ function createMainWindow() {
     if (isInternalUrl(url)) return;
 
     event.preventDefault();
-    shell.openExternal(url).catch(() => {});
+    openInRealBrowser(url);
   });
 
   mainWindow.webContents.on("before-input-event", (_event, input) => {
@@ -131,6 +131,27 @@ function createMainWindow() {
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
+}
+
+function openInRealBrowser(url) {
+  if (typeof url !== "string" || url.length === 0) return;
+
+  // macOS: explicitly use Safari (not the system default browser) to avoid
+  // recursion when Phishing Lens is set as the default handler for http/https.
+  if (process.platform === "darwin") {
+    try {
+      const child = spawn("open", ["-a", "Safari", url], {
+        stdio: "ignore",
+        detached: true
+      });
+      child.unref();
+      return;
+    } catch {
+      // fall through
+    }
+  }
+
+  shell.openExternal(url).catch(() => {});
 }
 
 function registerIpcHandlers() {

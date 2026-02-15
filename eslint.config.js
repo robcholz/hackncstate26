@@ -14,7 +14,16 @@ const config = [
     extends: ["next/core-web-vitals", "next/typescript"]
   }),
   {
-    ignores: ["node_modules/**", ".next/**", "coverage/**", "next-env.d.ts", "forge.config.cjs"]
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "coverage/**",
+      "next-env.d.ts",
+      "forge.config.cjs",
+      "out/**",
+      ".venv*/**",
+      "renderer-server/**"
+    ]
   }
 ];
 
