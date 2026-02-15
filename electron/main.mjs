@@ -384,7 +384,14 @@ async function startMacPasteMonitor() {
   if (process.platform !== "darwin") return;
   if (pasteMonitorProcess && !pasteMonitorProcess.killed) return;
 
-  const sourcePath = path.join(__dirname, "macos-paste-monitor.swift");
+  // In packaged builds, the app runs from an ASAR. External tools like `swiftc`
+  // cannot read source files inside ASAR paths, so we copy the Swift source to
+  // a real filesystem location first.
+  const bundledSourcePath = path.join(__dirname, "macos-paste-monitor.swift");
+  const extractedSourcePath = path.join(app.getPath("userData"), "phishinglens-paste-monitor.swift");
+  const sourcePath = await ensurePasteMonitorSource(bundledSourcePath, extractedSourcePath);
+  if (!sourcePath) return;
+
   const binaryPath = path.join(app.getPath("userData"), "phishinglens-paste-monitor");
 
   const ready = await ensurePasteMonitorBinary(sourcePath, binaryPath);
@@ -452,6 +459,17 @@ async function startMacPasteMonitor() {
 
     schedulePasteMonitorRestart();
   });
+}
+
+async function ensurePasteMonitorSource(bundledSourcePath, extractedSourcePath) {
+  try {
+    const data = await fs.readFile(bundledSourcePath);
+    await fs.writeFile(extractedSourcePath, data);
+    return extractedSourcePath;
+  } catch (error) {
+    console.warn("Unable to extract macOS paste monitor source:", error);
+    return null;
+  }
 }
 
 function stopMacPasteMonitor() {
