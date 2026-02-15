@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "dev:electron": "node scripts/dev-electron.mjs",
+    "electron": "node scripts/run-electron.mjs",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -22,6 +24,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "electron": "^40.4.1",
     "eslint": "^9.39.2",
     "eslint-config-next": "^15.1.0",
     "prettier": "^3.4.2",
