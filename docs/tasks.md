@@ -47,7 +47,7 @@
 - [x] Implement `redirectMatch` scoring from `redirectCount`.
 - [x] Implement normalized `rate` scoring from 4 factors (`1-10` clamp).
 - [x] Add TS types (`Score1To10`, `SusIndex`) using camelCase internal fields.
-- [ ] Map camelCase internal fields to snake_case API response fields.
+- [x] Map camelCase internal fields to snake_case API response fields.
 - [x] Testing: add unit tests for confusable-domain detection, keyword scoring, password input scoring, redirect scoring, and FP/FN benchmark cases.
 
 ### Final Wiring

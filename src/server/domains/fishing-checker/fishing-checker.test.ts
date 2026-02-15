@@ -42,6 +42,27 @@ describe("getSusIndex", () => {
     expect(result.redirectMatch).toBe(5);
   });
 
+  it("stops when max redirects is reached without following one extra hop", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(redirectResponse("https://safe.test/first"))
+      .mockResolvedValueOnce(redirectResponse("https://safe.test/second"));
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getSusIndex({
+      url: "https://safe.test/start",
+      timeout: 2000,
+      maxRedirects: 1
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("https://safe.test/start");
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("https://safe.test/first");
+    expect(result.redirectCount).toBe(1);
+    expect(result.redirectMatch).toBe(3);
+  });
+
   it("flags suspicious content with phishing keywords and password patterns", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       htmlResponse(`

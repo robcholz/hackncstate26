@@ -339,7 +339,7 @@ async function resolveRedirectsAndHtml(input: GetSusIndexInput): Promise<Redirec
   let currentUrl = input.url;
   const startedAt = Date.now();
 
-  while (redirectCount <= maxRedirects) {
+  while (true) {
     const elapsed = Date.now() - startedAt;
     const remaining = timeoutMs - elapsed;
 
@@ -360,6 +360,10 @@ async function resolveRedirectsAndHtml(input: GetSusIndexInput): Promise<Redirec
 
     const location = response.headers.get("location");
     if (REDIRECT_STATUS.has(response.status) && location) {
+      if (redirectCount >= maxRedirects) {
+        return { redirectCount, finalUrl: currentUrl, html: null };
+      }
+
       let nextUrl: string;
 
       try {
