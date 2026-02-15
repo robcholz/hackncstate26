@@ -22,4 +22,6 @@ services:
     image: hackncstate26-renderer:latest
     ports:
       - "3001:8000"
+    environment:
+      WEBSITE_RENDERER_TOKEN: dev-renderer-token
     restart: unless-stopped
