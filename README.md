@@ -15,4 +15,3 @@ sh scripts/pre-commit-check.sh
 [implementations.md](docs/implementations.md) contains all the implementations for features.md.
 
 [tasks.md](docs/tasks.md) contains the discrete tasks.
-

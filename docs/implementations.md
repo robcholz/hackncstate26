@@ -75,13 +75,13 @@ Manual redirect + HTML collection requirement:
 - Do not rely on Website Renderer output for phishing scoring signals.
 - Use redirect mode/manual behavior (or equivalent) and iterate `Location` headers.
 - Track:
-    - `redirectCount`
-    - `finalUrl`
-    - final response HTML body (if content type is HTML)
+  - `redirectCount`
+  - `finalUrl`
+  - final response HTML body (if content type is HTML)
 - Stop conditions:
-    - max redirects reached (recommend `10`)
-    - timeout reached
-    - redirect loop detected
+  - max redirects reached (recommend `10`)
+  - timeout reached
+  - redirect loop detected
 - If HTML cannot be fetched, keep scoring with available signals and default missing factors safely.
 
 Hardcoded suspicious-character map (homoglyph groups):
@@ -129,47 +129,47 @@ Hardcoded suspicious keyword list:
 Rating rules (all factors normalized to `1-10`):
 
 1. `domainSimilarity`:
-    - normalize host (`punycode -> unicode`), strip `www`.
-    - do not assume lowercase-only input; evaluate confusables with case-preserving matching.
-    - compare against trusted domains (for example: `microsoft.com`, `google.com`, `apple.com`, `paypal.com`,
-      `amazon.com`, `github.com`).
-    - calculate:
-        - `editScore`: similarity to nearest trusted domain (normalized Levenshtein/Jaro-Winkler).
-        - `homoglyphScore`: count of confusable substitutions and pair patterns (`rn` vs `m`, etc.).
-        - `brandPrefixBonus`: suspicious boost if host starts with a known brand token but domain is not exact.
-    - final:
-        - `rawScore = 0.5*editScore + 0.35*homoglyphScore + 0.15*brandPrefixBonus`
-        - normalize to `1-10`; clamp integer.
+   - normalize host (`punycode -> unicode`), strip `www`.
+   - do not assume lowercase-only input; evaluate confusables with case-preserving matching.
+   - compare against trusted domains (for example: `microsoft.com`, `google.com`, `apple.com`, `paypal.com`,
+     `amazon.com`, `github.com`).
+   - calculate:
+     - `editScore`: similarity to nearest trusted domain (normalized Levenshtein/Jaro-Winkler).
+     - `homoglyphScore`: count of confusable substitutions and pair patterns (`rn` vs `m`, etc.).
+     - `brandPrefixBonus`: suspicious boost if host starts with a known brand token but domain is not exact.
+   - final:
+     - `rawScore = 0.5*editScore + 0.35*homoglyphScore + 0.15*brandPrefixBonus`
+     - normalize to `1-10`; clamp integer.
 2. `keywordMatch`:
-    - extract visible text + meta/title from `html`.
-    - count unique keyword hits and weighted repeats.
-    - normalize:
-        - 0 hits -> `1`
-        - 1-2 hits -> `3-5`
-        - 3-5 hits -> `6-8`
-        - 6+ hits -> `9-10`
+   - extract visible text + meta/title from `html`.
+   - count unique keyword hits and weighted repeats.
+   - normalize:
+     - 0 hits -> `1`
+     - 1-2 hits -> `3-5`
+     - 3-5 hits -> `6-8`
+     - 6+ hits -> `9-10`
 3. `passwordInputMatch`:
-    - parse DOM and detect:
-        - `input[type=password]`
-        - forms posting to external/suspicious origins
-        - hidden username/email + password combos
-    - normalize:
-        - no password field -> `1`
-        - password field only -> `7`
-        - password field + suspicious form action/patterns -> `9-10`
+   - parse DOM and detect:
+     - `input[type=password]`
+     - forms posting to external/suspicious origins
+     - hidden username/email + password combos
+   - normalize:
+     - no password field -> `1`
+     - password field only -> `7`
+     - password field + suspicious form action/patterns -> `9-10`
 4. `redirectMatch`:
-    - use observed `redirectCount`.
-    - normalize:
-        - 0 redirects -> `1`
-        - 1 redirect -> `3`
-        - 2 redirects -> `5`
-        - 3 redirects -> `7`
-        - 4+ redirects -> `9-10`
+   - use observed `redirectCount`.
+   - normalize:
+     - 0 redirects -> `1`
+     - 1 redirect -> `3`
+     - 2 redirects -> `5`
+     - 3 redirects -> `7`
+     - 4+ redirects -> `9-10`
 
 Final rate (`1-10`):
 
 - weighted combination of the 4 factors:
-    - `rateRaw = 0.40*domainSimilarity + 0.25*keywordMatch + 0.20*passwordInputMatch + 0.15*redirectMatch`
+  - `rateRaw = 0.40*domainSimilarity + 0.25*keywordMatch + 0.20*passwordInputMatch + 0.15*redirectMatch`
 - `rate = clamp(round(rateRaw), 1, 10)`
 
 Return shape (TypeScript):
@@ -178,12 +178,12 @@ Return shape (TypeScript):
 export type Score1To10 = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 export interface SusIndex {
-    rate: Score1To10;
-    redirectMatch: Score1To10;
-    redirectCount: number; // >= 0
-    domainSimilarity: Score1To10;
-    keywordMatch: Score1To10;
-    passwordInputMatch: Score1To10;
+  rate: Score1To10;
+  redirectMatch: Score1To10;
+  redirectCount: number; // >= 0
+  domainSimilarity: Score1To10;
+  keywordMatch: Score1To10;
+  passwordInputMatch: Score1To10;
 }
 ```
 

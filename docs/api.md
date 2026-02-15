@@ -45,7 +45,7 @@
 - `403 forbidden`: Token valid but does not match, or resource scope.
 - `404 not_found`: Resource not found (or not accessible).
 - `409 conflict`: Unique constraint violation or conflicting state.
-- `429 too_many_requests`: Too many requests. 
+- `429 too_many_requests`: Too many requests.
 - `422 invalid_request`: Validation failed (schema, types, ranges).
 
 ## Website Renderer Microservice
@@ -63,6 +63,7 @@ Authorization: Bearer <WEBSITE_RENDERER_TOKEN>
 ```
 
 Server behavior:
+
 - If the header is missing or malformed, return `401 unauthorized`.
 - If the bearer token does not match the configured renderer token, return `403 forbidden`.
 
