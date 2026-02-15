@@ -249,6 +249,11 @@ export function LinkGateway() {
         return;
       }
 
+      if (typeof (window as unknown as { phishingLensBridge?: unknown }).phishingLensBridge !== "undefined") {
+        window.location.assign(url);
+        return;
+      }
+
       window.open(url, "_blank", "noopener,noreferrer");
     };
 
@@ -262,6 +267,14 @@ export function LinkGateway() {
     if (!normalizedTarget) return;
     if (typeof window.phishingLensBridge?.openExternal === "function") {
       window.phishingLensBridge.openExternal(normalizedTarget);
+      return;
+    }
+
+    // If we are inside Electron but the bridge didn't load for some reason,
+    // navigate in-place so Electron's `will-navigate` handler can route it
+    // to Safari instead of reloading inside this window.
+    if (typeof (window as unknown as { phishingLensBridge?: unknown }).phishingLensBridge !== "undefined") {
+      window.location.assign(normalizedTarget);
       return;
     }
 

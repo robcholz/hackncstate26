@@ -395,7 +395,10 @@ async function startMacPasteMonitor() {
   const binaryPath = path.join(app.getPath("userData"), "phishinglens-paste-monitor");
 
   const ready = await ensurePasteMonitorBinary(sourcePath, binaryPath);
-  if (!ready) return;
+  if (!ready) {
+    showPasteNotification("Paste monitor failed to start. If packaged, ensure Xcode CLT is installed and permissions are granted.");
+    return;
+  }
 
   const child = spawn(binaryPath, [], {
     stdio: ["ignore", "pipe", "pipe"]
@@ -538,6 +541,7 @@ function handlePasteMonitorStderr(line) {
       console.warn("Global paste monitoring needs macOS Input Monitoring/Accessibility permission.");
       shell.openExternal(INPUT_MONITORING_SETTINGS_URL).catch(() => {});
       shell.openExternal(ACCESSIBILITY_SETTINGS_URL).catch(() => {});
+      showPasteNotification("Enable Input Monitoring + Accessibility for Phishing Lens to intercept paste.");
     }
 
     return;
