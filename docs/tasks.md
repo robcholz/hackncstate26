@@ -4,14 +4,14 @@
 
 ### Website Renderer Microservice
 
-- [ ] Implement `POST /api/v1/render` request handling (`url`, `timeout`).
-- [ ] Enforce bearer token auth via `Authorization` header.
-- [ ] Return `401 unauthorized` for missing/malformed auth header.
-- [ ] Return `403 forbidden` for token mismatch.
-- [ ] Render webpage screenshot and return base64 `image`.
-- [ ] Handle overload path and return `429 too_many_requests`.
-- [ ] Handle render timeout and return timeout-style error response.
-- [ ] Testing: add unit/integration tests for auth validation, render success path, overload handling, and timeout behavior.
+- [x] Implement `POST /api/v1/render` request handling (`url`, `timeout`).
+- [x] Enforce bearer token auth via `Authorization` header.
+- [x] Return `401 unauthorized` for missing/malformed auth header.
+- [x] Return `403 forbidden` for token mismatch.
+- [x] Render webpage screenshot and return base64 `image`.
+- [x] Handle overload path and return `429 too_many_requests`.
+- [x] Handle render timeout and return timeout-style error response.
+- [x] Testing: add unit/integration tests for auth validation, render success path, overload handling, and timeout behavior.
 
 ### Backend API
 

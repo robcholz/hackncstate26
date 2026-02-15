@@ -4,7 +4,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const host = process.env.ELECTRON_NEXT_HOST ?? "127.0.0.1";
-const port = process.env.ELECTRON_NEXT_PORT ?? "3001";
+const port = process.env.ELECTRON_NEXT_PORT ?? "3000";
 const startUrl = process.env.ELECTRON_START_URL ?? `http://${host}:${port}`;
 const healthCheckUrl = `${startUrl}/open`;
 const forwardedArgs = process.argv.slice(2);

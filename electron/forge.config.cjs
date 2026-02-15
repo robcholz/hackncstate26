@@ -9,6 +9,7 @@ module.exports = {
     protocols: [
       {
         name: "Phishing Lens",
+        role: "Viewer",
         schemes: ["phishinglens", "http", "https"]
       }
     ]
