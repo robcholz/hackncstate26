@@ -29,6 +29,8 @@ def take_screenshot(item: Item):
         "result_queue": result_queue
     })
 
+    # print("got url")
+
     # wait for worker result
     return {"image": result_queue.get()}
 
@@ -44,6 +46,7 @@ def worker():
             try:
                 page.goto(job["url"], timeout=job["timeout"])
                 screenshot = page.screenshot()
+                page.screenshot(path="screenshot.png")
 
                 encoded = base64.b64encode(screenshot).decode()
                 job["result_queue"].put(encoded)
