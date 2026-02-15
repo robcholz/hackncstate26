@@ -16,3 +16,14 @@ False information detection pipeline.
 
 - Token Leak
 - ???? What else
+
+## Prompt Injection Detector
+
+- sent URL and get markdown result (should not have prompt injection)
+
+- analyze the 
+
+## Clipboard & Website Preview
+
+- website preview
+- domain similarity + keyword + password input.
