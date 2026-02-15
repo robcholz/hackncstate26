@@ -27,14 +27,6 @@ const SAFE_DEFAULT_SUS_INDEX: SusIndex = {
   passwordInputMatch: 1
 };
 
-function getDefaultDependencies(): BackendRenderDependencies {
-  return {
-    cache: getOrCreateImageCache(),
-    rendererClient: getOrCreateRendererClient(),
-    checker: getSusIndex
-  };
-}
-
 async function getSusIndexSafe(
   input: BackendRenderInput,
   checker: BackendRenderDependencies["checker"]
@@ -50,14 +42,8 @@ export async function getBackendRenderResult(
   input: BackendRenderInput,
   deps: Partial<BackendRenderDependencies> = {}
 ): Promise<BackendRenderOutput> {
-  const defaults = deps.cache && deps.rendererClient && deps.checker ? null : getDefaultDependencies();
-  const cache = deps.cache ?? defaults?.cache;
-  const rendererClient = deps.rendererClient ?? defaults?.rendererClient;
-  const checker = deps.checker ?? defaults?.checker;
-
-  if (!cache || !rendererClient || !checker) {
-    throw new Error("backend render dependencies are not configured");
-  }
+  const cache = deps.cache ?? getOrCreateImageCache();
+  const checker = deps.checker ?? getSusIndex;
 
   const susIndexPromise = getSusIndexSafe(input, checker);
 
@@ -68,6 +54,7 @@ export async function getBackendRenderResult(
   }
 
   try {
+    const rendererClient = deps.rendererClient ?? getOrCreateRendererClient();
     const image = await rendererClient.getImage({
       url: input.url,
       timeout: input.timeout
@@ -77,7 +64,6 @@ export async function getBackendRenderResult(
     const susIndex = await susIndexPromise;
     return { image, susIndex };
   } catch (error) {
-    await susIndexPromise;
     throw error;
   }
 }
