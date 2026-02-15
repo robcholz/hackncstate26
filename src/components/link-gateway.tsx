@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -29,6 +29,30 @@ type PreviewState =
   | { status: "error"; message: string }
   | { status: "success"; data: LinkPreview };
 
+type ClipboardInterceptKind = "paste" | "shortcut";
+
+interface ShortcutTelemetry {
+  blocked?: boolean;
+  entropy?: number | null;
+  clipboardLength?: number | null;
+}
+
+interface ClipboardInterceptPayload {
+  kind: ClipboardInterceptKind;
+  page: string;
+  target_tag: string | null;
+  url_context: string | null;
+  clipboard_text: string;
+  clipboard_text_length: number;
+  clipboard_text_truncated: boolean;
+  blocked: boolean;
+  entropy: number | null;
+  captured_at: string;
+}
+
+const CLIPBOARD_INTERCEPT_ENDPOINT = "/api/v1/clipboard/paste";
+const MAX_INTERCEPT_TEXT_CHARS = 4000;
+
 export function LinkGateway() {
   const router = useRouter();
   const pathname = usePathname();
@@ -49,6 +73,7 @@ export function LinkGateway() {
 
     return { status: "loading", message: "Loading preview..." };
   });
+  const lastShortcutInterceptAt = useRef<number>(0);
 
   useEffect(() => {
     if (!rawQueryUrl) {
@@ -98,12 +123,108 @@ export function LinkGateway() {
     };
   }, [normalizedTarget, parsedQueryTarget, rawQueryUrl]);
 
+  useEffect(() => {
+    const emitClipboardIntercept = (payload: ClipboardInterceptPayload): void => {
+      const body = JSON.stringify(payload);
+
+      if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+        const blob = new Blob([body], { type: "application/json" });
+        const accepted = navigator.sendBeacon(CLIPBOARD_INTERCEPT_ENDPOINT, blob);
+        if (accepted) return;
+      }
+
+      void fetch(CLIPBOARD_INTERCEPT_ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        keepalive: true
+      });
+    };
+
+    const emitShortcutIntercept = (target: EventTarget | null, telemetry?: ShortcutTelemetry): void => {
+      const now = Date.now();
+      if (now - lastShortcutInterceptAt.current < 220) return;
+      lastShortcutInterceptAt.current = now;
+
+      const blocked = telemetry?.blocked === true;
+      const entropy = typeof telemetry?.entropy === "number" ? telemetry.entropy : null;
+      const clipboardLength =
+        typeof telemetry?.clipboardLength === "number" && Number.isFinite(telemetry.clipboardLength)
+          ? Math.max(0, Math.trunc(telemetry.clipboardLength))
+          : 0;
+
+      emitClipboardIntercept({
+        kind: "shortcut",
+        page: window.location.pathname,
+        target_tag: getTargetTag(target),
+        url_context: normalizedTarget ?? null,
+        clipboard_text: "",
+        clipboard_text_length: clipboardLength,
+        clipboard_text_truncated: false,
+        blocked,
+        entropy,
+        captured_at: new Date(now).toISOString()
+      });
+    };
+
+    const onPaste = (event: ClipboardEvent): void => {
+      const clipboardText = event.clipboardData?.getData("text/plain") ?? "";
+      const truncatedText = clipboardText.slice(0, MAX_INTERCEPT_TEXT_CHARS);
+
+      emitClipboardIntercept({
+        kind: "paste",
+        page: window.location.pathname,
+        target_tag: getTargetTag(event.target),
+        url_context: normalizedTarget ?? null,
+        clipboard_text: truncatedText,
+        clipboard_text_length: clipboardText.length,
+        clipboard_text_truncated: clipboardText.length > truncatedText.length,
+        blocked: false,
+        entropy: null,
+        captured_at: new Date().toISOString()
+      });
+    };
+
+    const onPasteShortcut = (event: KeyboardEvent): void => {
+      if (event.repeat || event.altKey || event.shiftKey) return;
+
+      const isPasteShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "v";
+      if (!isPasteShortcut) return;
+
+      emitShortcutIntercept(event.target);
+    };
+
+    window.addEventListener("paste", onPaste, true);
+    window.addEventListener("keydown", onPasteShortcut, true);
+
+    const removeElectronBridgeListener =
+      typeof window.nightlaneBridge?.onPasteShortcutDetected === "function"
+        ? window.nightlaneBridge.onPasteShortcutDetected((payload) => {
+            const blocked = payload?.blocked === true;
+            const entropy = typeof payload?.entropy === "number" ? payload.entropy : null;
+            const clipboardLength = typeof payload?.clipboard_length === "number" ? payload.clipboard_length : null;
+
+            emitShortcutIntercept(document.activeElement, {
+              blocked,
+              entropy,
+              clipboardLength
+            });
+          })
+        : () => {};
+
+    return () => {
+      window.removeEventListener("paste", onPaste, true);
+      window.removeEventListener("keydown", onPasteShortcut, true);
+      removeElectronBridgeListener();
+    };
+  }, [normalizedTarget]);
+
   const openInBrowser = (): void => {
     if (!normalizedTarget) return;
     window.open(normalizedTarget, "_blank", "noopener,noreferrer");
   };
 
-  const onPreviewKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+  const onPreviewKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (!normalizedTarget) return;
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
@@ -214,4 +335,9 @@ export function LinkGateway() {
       </section>
     </main>
   );
+}
+
+function getTargetTag(target: EventTarget | null): string | null {
+  if (!target || !(target instanceof Element)) return null;
+  return target.tagName || null;
 }

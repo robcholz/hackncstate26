@@ -10,6 +10,7 @@ const healthCheckUrl = `${startUrl}/open`;
 const forwardedArgs = process.argv.slice(2);
 
 let shuttingDown = false;
+let electronProcess = null;
 
 const nextProcess = spawn(npmCommand, ["run", "dev", "--", "--hostname", host, "--port", port], {
   stdio: "inherit",
@@ -38,7 +39,7 @@ async function bootElectron() {
   }
 
   const electronArgs = ["run", "electron", "--", ...forwardedArgs];
-  const electronProcess = spawn(npmCommand, electronArgs, {
+  electronProcess = spawn(npmCommand, electronArgs, {
     stdio: "inherit",
     env: {
       ...process.env,
@@ -49,21 +50,21 @@ async function bootElectron() {
   electronProcess.on("exit", (code) => {
     shutdown(code ?? 0);
   });
+}
 
-  process.on("SIGINT", () => shutdown(0));
-  process.on("SIGTERM", () => shutdown(0));
+process.on("SIGINT", () => shutdown(0));
+process.on("SIGTERM", () => shutdown(0));
 
-  function shutdown(code) {
-    if (shuttingDown) return;
-    shuttingDown = true;
+function shutdown(code) {
+  if (shuttingDown) return;
+  shuttingDown = true;
 
-    terminateProcess(electronProcess);
-    terminateProcess(nextProcess);
+  terminateProcess(electronProcess);
+  terminateProcess(nextProcess);
 
-    setTimeout(() => {
-      process.exit(code);
-    }, 300);
-  }
+  setTimeout(() => {
+    process.exit(code);
+  }, 300);
 }
 
 function terminateProcess(child) {
