@@ -54,6 +54,18 @@
 
 Request to render a url
 
+#### Authentication
+
+This endpoint requires a bearer token in the `Authorization` header.
+
+```http
+Authorization: Bearer <WEBSITE_RENDERER_TOKEN>
+```
+
+Server behavior:
+- If the header is missing or malformed, return `401 unauthorized`.
+- If the bearer token does not match the configured renderer token, return `403 forbidden`.
+
 #### Request
 
 ```json
@@ -82,6 +94,8 @@ Request to render a url
 
 #### Errors
 
+- `401 unauthorized` if `Authorization` header is missing or malformed.
+- `403 forbidden` if bearer token does not match server configuration.
 - `429 too_many_requests` if the server cannot handle too many requests.
 
 ## Backend
