@@ -243,18 +243,8 @@ export function LinkGateway() {
       event.preventDefault();
       event.stopPropagation();
 
-      const url = resolved.toString();
-      if (typeof window.phishingLensBridge?.openExternal === "function") {
-        window.phishingLensBridge.openExternal(url);
-        return;
-      }
-
-      if (typeof (window as unknown as { phishingLensBridge?: unknown }).phishingLensBridge !== "undefined") {
-        window.location.assign(url);
-        return;
-      }
-
-      window.open(url, "_blank", "noopener,noreferrer");
+      // Use window.open so Electron can intercept it and reroute to Safari.
+      window.open(resolved.toString(), "_blank", "noopener,noreferrer");
     };
 
     document.addEventListener("click", onDocumentClick, true);
@@ -265,19 +255,7 @@ export function LinkGateway() {
 
   const openInBrowser = (): void => {
     if (!normalizedTarget) return;
-    if (typeof window.phishingLensBridge?.openExternal === "function") {
-      window.phishingLensBridge.openExternal(normalizedTarget);
-      return;
-    }
-
-    // If we are inside Electron but the bridge didn't load for some reason,
-    // navigate in-place so Electron's `will-navigate` handler can route it
-    // to Safari instead of reloading inside this window.
-    if (typeof (window as unknown as { phishingLensBridge?: unknown }).phishingLensBridge !== "undefined") {
-      window.location.assign(normalizedTarget);
-      return;
-    }
-
+    // In Electron, the main process intercepts this and routes it to Safari.
     window.open(normalizedTarget, "_blank", "noopener,noreferrer");
   };
 
