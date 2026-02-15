@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.next
+coverage
+node_modules
+npm-debug.log*
+Dockerfile
+docker-compose.yml
+README.md
+renderer-server
+e2e
+docs
+scripts
+.env*

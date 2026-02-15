@@ -1,0 +1,25 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hackncstate26-nextjs:latest
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      WEBSITE_RENDERER_BASE_URL: http://renderer:8000
+      WEBSITE_RENDERER_TOKEN: dev-renderer-token
+    depends_on:
+      - renderer
+    restart: unless-stopped
+
+  renderer:
+    build:
+      context: ./renderer-server
+      dockerfile: Dockerfile
+    image: hackncstate26-renderer:latest
+    ports:
+      - "3001:8000"
+    restart: unless-stopped

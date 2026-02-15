@@ -26,7 +26,9 @@ class RenderHandler(BaseHTTPRequestHandler):
         # Simulate per-request work so concurrency is measurable.
         time.sleep(0.1)
 
-        response = json.dumps({"image": "base64-image"}).encode("utf-8")
+        response = json.dumps(
+            {"status": "success", "data": {"image": "base64-image"}}
+        ).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(response)))
@@ -76,7 +78,9 @@ class RendererConcurrencyTest(unittest.TestCase):
 
         for status, body in results:
             self.assertEqual(status, 200)
-            self.assertIn("image", body)
+            self.assertEqual(body.get("status"), "success")
+            self.assertIn("data", body)
+            self.assertIn("image", body["data"])
 
         # Sequentially this would take around request_count * 0.1 seconds.
         self.assertLess(elapsed, 0.5)

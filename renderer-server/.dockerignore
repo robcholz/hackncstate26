@@ -1,0 +1,5 @@
+__pycache__
+.ruff_cache
+.tracecov
+*.cover
+test.py
