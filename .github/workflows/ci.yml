@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  quality:
+  fullstack:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,3 +36,35 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  image-microservice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r renderer-server/requirements.txt
+
+      - name: Python Lint
+        run: ruff check renderer-server
+
+      - name: Python Format Check
+        run: ruff format --check renderer-server
+
+      - name: Python Test
+        run: python3 renderer-server/test.py
+
+      - name: Python Build Check
+        run: python3 -m compileall -q renderer-server
+
+      - name: Python Trace Coverage
+        shell: bash
+        run: |
+          TRACE_IGNORE_DIRS="$(python3 -c 'import os,sysconfig; print(os.pathsep.join(filter(None, [sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib")])))')"
+          python3 -m trace --count --summary -C renderer-server/.tracecov --ignore-dir="$TRACE_IGNORE_DIRS" renderer-server/test.py
