@@ -123,6 +123,8 @@ Request to render a url
     "image": "<base64>",
     "sus_index": {
       "rate": 7,
+      "redirect_match": 4,
+      "redirect_count": 1,
       "domain_similarity": 5,
       "keyword_match": 3,
       "password_input_match": 6
@@ -133,8 +135,10 @@ Request to render a url
 
 `data`: Object containing the render result and phishing analysis summary.  
 `data.image`: Base64-encoded screenshot of the rendered page (string).  
-`data.sus_index`: Suspiciousness scoring breakdown (object).  
+`data.sus_index`: Suspiciousness scoring breakdown object.  
 `data.sus_index.rate`: Overall suspiciousness score (number).  
+`data.sus_index.redirect_match`: Redirect suspiciousness score (number, `1-10`).  
+`data.sus_index.redirect_count`: Number of redirects observed while resolving the URL (integer, `>= 0`).  
 `data.sus_index.domain_similarity`: Domain similarity score (number).  
 `data.sus_index.keyword_match`: Keyword match score (number).  
 `data.sus_index.password_input_match`: Password-input pattern score (number).
