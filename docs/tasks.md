@@ -36,19 +36,19 @@
 
 ### Fishing Checker Logic
 
-- [ ] Expose one public function: `getSusIndex(input): SusIndex`.
-- [ ] Implement manual redirect flow inside checker starting from input `url`.
-- [ ] Track `redirectCount`, `finalUrl`, and final HTML body.
-- [ ] Add stop conditions: max redirects, timeout, redirect loop.
-- [ ] Implement confusable-domain detection with hardcoded ASCII, Unicode, and multi-char lookalike patterns.
-- [ ] Implement `domainSimilarity` scoring with `editScore`, `homoglyphScore`, `brandPrefixBonus`.
-- [ ] Implement hardcoded suspicious keyword list and `keywordMatch` scoring from HTML content.
-- [ ] Implement `passwordInputMatch` scoring from password/form patterns in HTML.
-- [ ] Implement `redirectMatch` scoring from `redirectCount`.
-- [ ] Implement normalized `rate` scoring from 4 factors (`1-10` clamp).
-- [ ] Add TS types (`Score1To10`, `SusIndex`) using camelCase internal fields.
-- [ ] Map camelCase internal fields to snake_case API response fields.
-- [ ] Testing: add unit tests for confusable-domain detection, keyword scoring, password input scoring, redirect scoring, and FP/FN benchmark cases.
+- [x] Expose one public function: `getSusIndex(input): SusIndex`.
+- [x] Implement manual redirect flow inside checker starting from input `url`.
+- [x] Track `redirectCount`, `finalUrl`, and final HTML body.
+- [x] Add stop conditions: max redirects, timeout, redirect loop.
+- [x] Implement confusable-domain detection with hardcoded ASCII, Unicode, and multi-char lookalike patterns.
+- [x] Implement `domainSimilarity` scoring with `editScore`, `homoglyphScore`, `brandPrefixBonus`.
+- [x] Implement hardcoded suspicious keyword list and `keywordMatch` scoring from HTML content.
+- [x] Implement `passwordInputMatch` scoring from password/form patterns in HTML.
+- [x] Implement `redirectMatch` scoring from `redirectCount`.
+- [x] Implement normalized `rate` scoring from 4 factors (`1-10` clamp).
+- [x] Add TS types (`Score1To10`, `SusIndex`) using camelCase internal fields.
+- [x] Map camelCase internal fields to snake_case API response fields.
+- [x] Testing: add unit tests for confusable-domain detection, keyword scoring, password input scoring, redirect scoring, and FP/FN benchmark cases.
 
 ### Final Wiring
 
