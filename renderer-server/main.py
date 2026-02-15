@@ -31,7 +31,7 @@ def take_screenshot(item: Item):
     print("got url")
 
     # wait for worker result
-    return {"image": result_queue.get()}
+    return {"status": "success", "data": {"image": result_queue.get()}}
 
 
 def worker():

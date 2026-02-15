@@ -5,6 +5,8 @@
 node_modules
 coverage
 
+e2e/output
+
 renderer-server/.tracecov
 renderer-server/.venv
 renderer-server/test.cover
