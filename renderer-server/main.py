@@ -24,7 +24,9 @@ class Item(BaseModel):
 def require_auth(authorization: str | None) -> None:
     expected = os.environ.get("WEBSITE_RENDERER_TOKEN", "").strip()
     if not expected:
-        raise HTTPException(status_code=500, detail="WEBSITE_RENDERER_TOKEN is not configured")
+        raise HTTPException(
+            status_code=500, detail="WEBSITE_RENDERER_TOKEN is not configured"
+        )
 
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid bearer token")
@@ -46,7 +48,9 @@ def take_screenshot(item: Item, authorization: str | None = Header(default=None)
     # wait for worker result
     result = result_queue.get()
     if isinstance(result, dict) and result.get("status") == "error":
-        raise HTTPException(status_code=502, detail=result.get("message", "Render failed"))
+        raise HTTPException(
+            status_code=502, detail=result.get("message", "Render failed")
+        )
 
     return {"status": "success", "data": {"image": result}}
 
