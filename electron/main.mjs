@@ -17,6 +17,7 @@ const PREVIEW_ROUTE = "/open";
 const CUSTOM_PROTOCOL = "phishinglens";
 const PASTE_SHORTCUT_CHANNEL = "clipboard:paste-shortcut-detected";
 const SHOW_OVERLAY_CHANNEL = "clipboard:show-overlay";
+const OPEN_EXTERNAL_CHANNEL = "shell:open-external";
 const OVERLAY_HIDE_MS = 1400;
 const PASTE_PROMPT_MESSAGE = "Are you sure you want to paste?";
 const PASTE_CONFIRM_MESSAGE = "Paste paused. Press paste again to confirm.";
@@ -157,6 +158,10 @@ function openInRealBrowser(url) {
 function registerIpcHandlers() {
   ipcMain.on(SHOW_OVERLAY_CHANNEL, () => {
     showSystemPasteOverlay();
+  });
+
+  ipcMain.on(OPEN_EXTERNAL_CHANNEL, (_event, url) => {
+    openInRealBrowser(typeof url === "string" ? url : "");
   });
 }
 

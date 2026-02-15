@@ -219,8 +219,52 @@ export function LinkGateway() {
     };
   }, [normalizedTarget]);
 
+  useEffect(() => {
+    const onDocumentClick = (event: MouseEvent): void => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const anchor = target.closest("a[href]");
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href) return;
+
+      let resolved: URL;
+      try {
+        resolved = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
+
+      if (resolved.protocol !== "http:" && resolved.protocol !== "https:") return;
+      if (resolved.origin === window.location.origin) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const url = resolved.toString();
+      if (typeof window.phishingLensBridge?.openExternal === "function") {
+        window.phishingLensBridge.openExternal(url);
+        return;
+      }
+
+      window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    document.addEventListener("click", onDocumentClick, true);
+    return () => {
+      document.removeEventListener("click", onDocumentClick, true);
+    };
+  }, []);
+
   const openInBrowser = (): void => {
     if (!normalizedTarget) return;
+    if (typeof window.phishingLensBridge?.openExternal === "function") {
+      window.phishingLensBridge.openExternal(normalizedTarget);
+      return;
+    }
+
     window.open(normalizedTarget, "_blank", "noopener,noreferrer");
   };
 

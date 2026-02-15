@@ -4,6 +4,7 @@ declare global {
   interface Window {
     phishingLensBridge?: {
       showPasteOverlay: () => void;
+      openExternal: (url: string) => void;
       onPasteShortcutDetected: (
         callback: (
           payload: {
