@@ -103,6 +103,10 @@ Server behavior:
 
 Request to render a url
 
+UI rendering constraint reference:
+
+- `docs/ui-metrics.md`
+
 #### Request
 
 ```json

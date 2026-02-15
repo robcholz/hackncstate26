@@ -11,3 +11,6 @@ renderer-server/.tracecov
 renderer-server/.venv
 renderer-server/test.cover
 renderer-server/__pycache__
+venv
+targets
+out/
