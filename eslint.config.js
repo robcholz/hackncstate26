@@ -14,7 +14,7 @@ const config = [
     extends: ["next/core-web-vitals", "next/typescript"]
   }),
   {
-    ignores: ["node_modules/**", ".next/**", "coverage/**"]
+    ignores: ["node_modules/**", ".next/**", "coverage/**", "next-env.d.ts"]
   }
 ];
 
