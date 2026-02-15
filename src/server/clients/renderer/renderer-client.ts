@@ -45,7 +45,9 @@ export class RendererTimeoutError extends RendererRequestError {
   }
 }
 
-const DEFAULT_RENDERER_BASE_URL = "http://localhost:3001";
+// The renderer microservice runs separately from the Next app.
+// Default to the local dev port used by `renderer-server/main.py`.
+const DEFAULT_RENDERER_BASE_URL = "http://localhost:8000";
 const DEFAULT_TIMEOUT_MS = 3_000;
 
 function parseImageFromResponse(payload: unknown): string {

@@ -50,7 +50,6 @@ interface ClipboardInterceptPayload {
   captured_at: string;
 }
 
-const CLIPBOARD_INTERCEPT_ENDPOINT = "/api/v1/clipboard/paste";
 const MAX_INTERCEPT_TEXT_CHARS = 4000;
 
 export function LinkGateway() {
@@ -125,20 +124,7 @@ export function LinkGateway() {
 
   useEffect(() => {
     const emitClipboardIntercept = (payload: ClipboardInterceptPayload): void => {
-      const body = JSON.stringify(payload);
-
-      if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-        const blob = new Blob([body], { type: "application/json" });
-        const accepted = navigator.sendBeacon(CLIPBOARD_INTERCEPT_ENDPOINT, blob);
-        if (accepted) return;
-      }
-
-      void fetch(CLIPBOARD_INTERCEPT_ENDPOINT, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body,
-        keepalive: true
-      });
+      window.phishingLensBridge?.captureClipboardEvent?.(payload);
     };
 
     const emitShortcutIntercept = (target: EventTarget | null, telemetry?: ShortcutTelemetry): void => {
@@ -219,8 +205,55 @@ export function LinkGateway() {
     };
   }, [normalizedTarget]);
 
+  useEffect(() => {
+    const onDocumentClick = (event: MouseEvent): void => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const anchor = target.closest("a[href]");
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href) return;
+
+      let resolved: URL;
+      try {
+        resolved = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
+
+      if (resolved.protocol !== "http:" && resolved.protocol !== "https:") return;
+      if (resolved.origin === window.location.origin) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const url = resolved.toString();
+
+      if (typeof window.phishingLensBridge?.openExternal === "function") {
+        window.phishingLensBridge.openExternal(url);
+        return;
+      }
+
+      // Fallback: Electron's main process will intercept the open.
+      window.open(url, "_blank", "noopener,noreferrer");
+    };
+
+    document.addEventListener("click", onDocumentClick, true);
+    return () => {
+      document.removeEventListener("click", onDocumentClick, true);
+    };
+  }, []);
+
   const openInBrowser = (): void => {
     if (!normalizedTarget) return;
+    if (typeof window.phishingLensBridge?.openExternal === "function") {
+      window.phishingLensBridge.openExternal(normalizedTarget);
+      return;
+    }
+
+    // Fallback: Electron's main process intercepts this and routes it to Safari.
     window.open(normalizedTarget, "_blank", "noopener,noreferrer");
   };
 

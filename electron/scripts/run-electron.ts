@@ -9,7 +9,7 @@ const forwardedArgs = process.argv.slice(2);
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 
-const child = spawn(electronBinaryPath, ["electron/main.mjs", ...forwardedArgs], {
+const child = spawn(electronBinaryPath, ["dist/main.js", ...forwardedArgs], {
   stdio: "inherit",
   env
 });

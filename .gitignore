@@ -3,14 +3,17 @@
 
 .next
 node_modules
+electron/dist
 coverage
 
 e2e/output
 
 renderer-server/.tracecov
 renderer-server/.venv
+renderer-server/.venv*/
 renderer-server/test.cover
 renderer-server/__pycache__
-venv
-targets
-out/
+renderer-server/screenshot.png
+
+__pycache__/
+*.pyc

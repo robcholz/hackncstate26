@@ -7,8 +7,12 @@ npm run test
 npm run test:coverage
 npm run lint
 
+npm --prefix electron run format
+npm --prefix electron run lint
+npm --prefix electron run build
+
 ruff check renderer-server
-ruff format --check renderer-server
+ruff format renderer-server
 python3 renderer-server/test.py
 python3 -m compileall -q renderer-server
 TRACE_IGNORE_DIRS="$(python3 -c 'import os,sysconfig; print(os.pathsep.join(filter(None, [sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib")])))')"
