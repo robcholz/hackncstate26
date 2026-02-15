@@ -95,7 +95,11 @@ code {
   line-height: 1;
   cursor: pointer;
   backdrop-filter: blur(6px);
-  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease, opacity 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease,
+    opacity 150ms ease;
 }
 
 .stage-close:hover {
@@ -116,8 +120,7 @@ code {
   text-align: center;
   background:
     radial-gradient(circle at 10% 12%, rgba(74, 210, 217, 0.08), transparent 42%),
-    radial-gradient(circle at 86% 100%, rgba(255, 144, 81, 0.09), transparent 40%),
-    rgba(5, 8, 12, 0.9);
+    radial-gradient(circle at 86% 100%, rgba(255, 144, 81, 0.09), transparent 40%), rgba(5, 8, 12, 0.9);
 }
 
 .preview-window::before {
@@ -184,9 +187,7 @@ code {
   padding: 0.56rem 0.92rem;
   border-radius: 999px;
   border: 1px solid rgba(127, 150, 165, 0.34);
-  background:
-    linear-gradient(180deg, rgba(8, 14, 22, 0.72), rgba(8, 14, 22, 0.56)),
-    rgba(8, 14, 22, 0.52);
+  background: linear-gradient(180deg, rgba(8, 14, 22, 0.72), rgba(8, 14, 22, 0.56)), rgba(8, 14, 22, 0.52);
   box-shadow:
     0 14px 34px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(74, 210, 217, 0.09) inset;

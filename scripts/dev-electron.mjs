@@ -11,18 +11,14 @@ const forwardedArgs = process.argv.slice(2);
 
 let shuttingDown = false;
 
-const nextProcess = spawn(
-  npmCommand,
-  ["run", "dev", "--", "--hostname", host, "--port", port],
-  {
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      HOSTNAME: host,
-      PORT: port
-    }
+const nextProcess = spawn(npmCommand, ["run", "dev", "--", "--hostname", host, "--port", port], {
+  stdio: "inherit",
+  env: {
+    ...process.env,
+    HOSTNAME: host,
+    PORT: port
   }
-);
+});
 
 nextProcess.on("exit", (code) => {
   if (shuttingDown) return;

@@ -68,9 +68,7 @@ describe("GET /api/v1/preview", () => {
 
     mockedGetLinkPreview.mockResolvedValue(mockData);
 
-    const request = new NextRequest(
-      "http://localhost/api/v1/preview?url=https%253A%252F%252Fgithub.com%252Fopenai"
-    );
+    const request = new NextRequest("http://localhost/api/v1/preview?url=https%253A%252F%252Fgithub.com%252Fopenai");
     await GET(request);
 
     expect(mockedGetLinkPreview).toHaveBeenCalledWith("https://github.com/openai");

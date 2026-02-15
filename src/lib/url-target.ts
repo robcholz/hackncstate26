@@ -6,9 +6,7 @@ export interface ParsedTargetUrl {
   protocol: "http:" | "https:";
 }
 
-export type TargetUrlResult =
-  | { ok: true; value: ParsedTargetUrl }
-  | { ok: false; error: string };
+export type TargetUrlResult = { ok: true; value: ParsedTargetUrl } | { ok: false; error: string };
 
 export function parseTargetUrl(input: string | null | undefined): TargetUrlResult {
   if (typeof input !== "string" || input.trim().length === 0) {

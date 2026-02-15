@@ -43,12 +43,7 @@ function buildMockSusIndex(hostname: string): SusIndex {
   const redirectCount = hash % 5;
   const redirectMatch = clampScore(redirectCount === 0 ? 1 : redirectCount * 2 + 1);
   const rate = clampScore(
-    Math.round(
-      0.4 * domainSimilarity +
-        0.25 * keywordMatch +
-        0.2 * passwordInputMatch +
-        0.15 * redirectMatch
-    )
+    Math.round(0.4 * domainSimilarity + 0.25 * keywordMatch + 0.2 * passwordInputMatch + 0.15 * redirectMatch)
   );
 
   return {

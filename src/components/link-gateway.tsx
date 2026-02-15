@@ -77,8 +77,7 @@ export function LinkGateway() {
         if (cancelled) return;
 
         if (!response.ok || payload.status !== "success") {
-          const message =
-            payload.status === "error" ? payload.error.message : "Failed to load preview.";
+          const message = payload.status === "error" ? payload.error.message : "Failed to load preview.";
           setPreviewState({ status: "error", message });
           return;
         }
