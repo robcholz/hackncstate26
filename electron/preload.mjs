@@ -3,7 +3,7 @@ import { contextBridge, ipcRenderer } from "electron";
 const PASTE_SHORTCUT_CHANNEL = "clipboard:paste-shortcut-detected";
 const SHOW_OVERLAY_CHANNEL = "clipboard:show-overlay";
 
-contextBridge.exposeInMainWorld("nightlaneBridge", {
+contextBridge.exposeInMainWorld("phishingLensBridge", {
   showPasteOverlay: () => {
     ipcRenderer.send(SHOW_OVERLAY_CHANNEL);
   },

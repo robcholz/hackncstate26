@@ -1,8 +1,10 @@
 {
-  "name": "hackncstate26",
+  "name": "phishing-lens",
+  "productName": "Phishing Lens",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "electron/main.mjs",
   "scripts": {
     "dev": "next dev",
     "dev:electron": "node scripts/dev-electron.mjs",

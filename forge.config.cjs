@@ -8,8 +8,8 @@ module.exports = {
     // Note: setting as default still requires user action in macOS Settings in most cases.
     protocols: [
       {
-        name: "Nightlane",
-        schemes: ["nightlane", "http", "https"]
+        name: "Phishing Lens",
+        schemes: ["phishinglens", "http", "https"]
       }
     ]
   },

@@ -3,17 +3,25 @@ import { NextRequest } from "next/server";
 
 import type { LinkPreview } from "@/lib/link-preview";
 import { getLinkPreview } from "@/lib/link-preview";
+import { getBackendRenderResult } from "../../../../server/services/backend/backend-render.service";
 import { GET } from "./route";
 
 vi.mock("@/lib/link-preview", () => ({
   getLinkPreview: vi.fn()
 }));
 
+vi.mock("../../../../server/services/backend/backend-render.service", () => ({
+  getBackendRenderResult: vi.fn()
+}));
+
 const mockedGetLinkPreview = vi.mocked(getLinkPreview);
+const mockedGetBackendRenderResult = vi.mocked(getBackendRenderResult);
 
 describe("GET /api/v1/preview", () => {
   beforeEach(() => {
     mockedGetLinkPreview.mockReset();
+    mockedGetBackendRenderResult.mockReset();
+    mockedGetBackendRenderResult.mockRejectedValue(new Error("renderer unavailable"));
   });
 
   it("returns mocked success payload for a valid URL", async () => {
@@ -41,6 +49,7 @@ describe("GET /api/v1/preview", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(mockedGetBackendRenderResult).toHaveBeenCalledWith({ url: "https://example.com/login", timeout: 3000 });
     expect(mockedGetLinkPreview).toHaveBeenCalledWith("https://example.com/login");
     expect(body).toEqual({
       status: "success",
@@ -71,6 +80,7 @@ describe("GET /api/v1/preview", () => {
     const request = new NextRequest("http://localhost/api/v1/preview?url=https%253A%252F%252Fgithub.com%252Fopenai");
     await GET(request);
 
+    expect(mockedGetBackendRenderResult).toHaveBeenCalledWith({ url: "https://github.com/openai", timeout: 3000 });
     expect(mockedGetLinkPreview).toHaveBeenCalledWith("https://github.com/openai");
   });
 
@@ -87,6 +97,43 @@ describe("GET /api/v1/preview", () => {
         code: "invalid_request",
         message: "Only HTTP and HTTPS links are supported."
       }
+    });
+  });
+
+  it("returns a rendered screenshot when backend renderer succeeds", async () => {
+    mockedGetBackendRenderResult.mockResolvedValueOnce({
+      image: "base64-image",
+      susIndex: {
+        rate: 7,
+        redirectMatch: 4,
+        redirectCount: 1,
+        domainSimilarity: 5,
+        keywordMatch: 3,
+        passwordInputMatch: 6
+      }
+    });
+
+    const request = new NextRequest("http://localhost/api/v1/preview?url=https://github.com/openai");
+    const response = await GET(request);
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(200);
+    expect(mockedGetLinkPreview).not.toHaveBeenCalled();
+    expect(body).toEqual({
+      status: "success",
+      data: expect.objectContaining({
+        url: "https://github.com/openai",
+        hostname: "github.com",
+        image: "data:image/png;base64,base64-image",
+        sus_index: {
+          rate: 7,
+          redirect_match: 4,
+          redirect_count: 1,
+          domain_similarity: 5,
+          keyword_match: 3,
+          password_input_match: 6
+        }
+      })
     });
   });
 });

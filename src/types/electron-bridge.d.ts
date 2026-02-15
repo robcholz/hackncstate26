@@ -2,7 +2,7 @@ export {};
 
 declare global {
   interface Window {
-    nightlaneBridge?: {
+    phishingLensBridge?: {
       showPasteOverlay: () => void;
       onPasteShortcutDetected: (
         callback: (

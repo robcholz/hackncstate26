@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const DEFAULT_START_URL = process.env.ELECTRON_START_URL ?? "http://127.0.0.1:3001";
 const APP_ORIGIN = new URL(DEFAULT_START_URL).origin;
 const PREVIEW_ROUTE = "/open";
-const CUSTOM_PROTOCOL = "nightlane";
+const CUSTOM_PROTOCOL = "phishinglens";
 const PASTE_SHORTCUT_CHANNEL = "clipboard:paste-shortcut-detected";
 const SHOW_OVERLAY_CHANNEL = "clipboard:show-overlay";
 const OVERLAY_HIDE_MS = 1400;
@@ -97,6 +97,7 @@ function createMainWindow() {
     minWidth: 900,
     minHeight: 560,
     backgroundColor: "#05080d",
+    title: "Phishing Lens",
     titleBarStyle: "hiddenInset",
     autoHideMenuBar: true,
     webPreferences: {
@@ -317,7 +318,7 @@ function showPasteNotification(message) {
 
   try {
     new Notification({
-      title: "Nightlane",
+      title: "Phishing Lens",
       body: message,
       silent: true
     }).show();
@@ -358,7 +359,7 @@ async function startMacPasteMonitor() {
   if (pasteMonitorProcess && !pasteMonitorProcess.killed) return;
 
   const sourcePath = path.join(__dirname, "macos-paste-monitor.swift");
-  const binaryPath = path.join(app.getPath("userData"), "nightlane-paste-monitor");
+  const binaryPath = path.join(app.getPath("userData"), "phishinglens-paste-monitor");
 
   const ready = await ensurePasteMonitorBinary(sourcePath, binaryPath);
   if (!ready) return;
@@ -647,7 +648,7 @@ function normalizeIncomingUrl(rawUrl) {
     // no-op, fall back to inline parse
   }
 
-  const inlineValue = rawUrl.replace(/^nightlane:\/*/i, "");
+  const inlineValue = rawUrl.replace(/^phishinglens:\/*/i, "");
   return normalizeHttpUrl(inlineValue);
 }
 

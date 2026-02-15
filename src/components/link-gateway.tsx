@@ -198,8 +198,8 @@ export function LinkGateway() {
     window.addEventListener("keydown", onPasteShortcut, true);
 
     const removeElectronBridgeListener =
-      typeof window.nightlaneBridge?.onPasteShortcutDetected === "function"
-        ? window.nightlaneBridge.onPasteShortcutDetected((payload) => {
+      typeof window.phishingLensBridge?.onPasteShortcutDetected === "function"
+        ? window.phishingLensBridge.onPasteShortcutDetected((payload) => {
             const blocked = payload?.blocked === true;
             const entropy = typeof payload?.entropy === "number" ? payload.entropy : null;
             const clipboardLength = typeof payload?.clipboard_length === "number" ? payload.clipboard_length : null;
