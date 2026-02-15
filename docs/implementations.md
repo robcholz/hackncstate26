@@ -86,15 +86,28 @@ Manual redirect + HTML collection requirement:
 
 Hardcoded suspicious-character map (homoglyph groups):
 
-- `o`: `0`, `O`
-- `i`: `1`, `l`, `I`
-- `e`: `3`
-- `a`: `@`, `4`
-- `s`: `5`, `$`
-- `g`: `9`
-- `b`: `8`
-- `m`: `rn` (pair pattern)
-- plus unicode confusables where practical (for example Cyrillic `а/е/о/р/с/х`).
+- ASCII confusables:
+  - `a A`: `4 @`
+  - `b B`: `8`
+  - `e E`: `3`
+  - `g G`: `9`
+  - `i I l L`: `1 | !`
+  - `o O`: `0`
+  - `s S`: `5 $`
+  - `t T`: `7`
+  - `z Z`: `2`
+- Unicode confusables (common in phishing domains):
+  - Cyrillic: `а А е Е о О р Р с С у У х Х і І ј Ј` vs Latin lookalikes
+  - Greek: `Α α Β Ε Ζ Η Ι Κ Μ Ν Ο Ρ Τ Υ Χ` vs Latin lookalikes
+- Multi-character lookalikes:
+  - `rn` <-> `m`
+  - `cl` <-> `d`
+  - `vv` <-> `w`
+  - `li` <-> `h`
+  - `00` <-> `o0` (digit/letter blends)
+- Detection requirement:
+  - check both single-char substitutions and multi-char lookalike patterns against trusted domains.
+  - if confusable substitutions are present in brand-like hostnames, increase `homoglyphScore` aggressively.
 
 Hardcoded suspicious keyword list:
 
@@ -116,15 +129,16 @@ Hardcoded suspicious keyword list:
 Rating rules (all factors normalized to `1-10`):
 
 1. `domainSimilarity`:
-    - normalize host (`punycode -> unicode -> lowercase`), strip `www`.
+    - normalize host (`punycode -> unicode`), strip `www`.
+    - do not assume lowercase-only input; evaluate confusables with case-preserving matching.
     - compare against trusted domains (for example: `microsoft.com`, `google.com`, `apple.com`, `paypal.com`,
       `amazon.com`, `github.com`).
     - calculate:
-        - `edit_score`: similarity to nearest trusted domain (normalized Levenshtein/Jaro-Winkler).
-        - `homoglyph_score`: count of confusable substitutions and pair patterns (`rn` vs `m`, etc.).
-        - `brand_prefix_bonus`: suspicious boost if host starts with a known brand token but domain is not exact.
+        - `editScore`: similarity to nearest trusted domain (normalized Levenshtein/Jaro-Winkler).
+        - `homoglyphScore`: count of confusable substitutions and pair patterns (`rn` vs `m`, etc.).
+        - `brandPrefixBonus`: suspicious boost if host starts with a known brand token but domain is not exact.
     - final:
-        - `raw = 0.5*edit_score + 0.35*homoglyph_score + 0.15*brand_prefix_bonus`
+        - `rawScore = 0.5*editScore + 0.35*homoglyphScore + 0.15*brandPrefixBonus`
         - normalize to `1-10`; clamp integer.
 2. `keywordMatch`:
     - extract visible text + meta/title from `html`.
