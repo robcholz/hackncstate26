@@ -29,7 +29,7 @@
 - [x] Implement frequency-based eviction policy with max size (default 20).
 - [x] Expose only `setRefreshTimeout(ms)`, `setCacheMaxSize(size)`, `putImage(image)`, `getImage(): Image`.
 - [x] Add callback hooks so cache can trigger Cloudflare R2 sync without direct dependency.
-- [ ] Keep Cloudflare R2 API module separate from cache module.
+- [x] Keep Cloudflare R2 API module separate from cache module.
 - [x] Testing: add unit tests for eviction policy, refresh timeout, and callback behavior; mock Cloudflare R2 for CI.
 
 ## Stage 1
