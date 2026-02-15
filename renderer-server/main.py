@@ -20,6 +20,7 @@ class Item(BaseModel):
 
 @app.post("/api/v1/render")
 def take_screenshot(item: Item):
+    print("req")
     # each request gets its own result queue
     result_queue = queue.Queue(maxsize=1)
 
@@ -29,7 +30,7 @@ def take_screenshot(item: Item):
         "result_queue": result_queue
     })
 
-    # print("got url")
+    print("got url")
 
     # wait for worker result
     return {"image": result_queue.get()}
@@ -54,7 +55,8 @@ def worker():
             except Exception as e:
                 job["result_queue"].put(f"error: {e}")
 
+def main():
+    # start workers
+    for _ in range(4):
+        threading.Thread(target=worker, daemon=True).start()
 
-# start workers
-for _ in range(4):
-    threading.Thread(target=worker, daemon=True).start()
