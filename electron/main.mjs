@@ -441,6 +441,7 @@ async function startMacPasteMonitor() {
     if (parsed.type === "monitor-ready" && !didLogPasteMonitorReady) {
       didLogPasteMonitorReady = true;
       console.info("Paste monitor ready: global Cmd+V interception active.");
+      showPasteNotification("Paste monitor active. Press paste twice to confirm.");
     }
   });
 
