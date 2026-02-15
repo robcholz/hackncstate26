@@ -3,6 +3,7 @@
 This document defines the target architecture and ownership boundaries.
 
 References:
+
 - `docs/api.md`: external API contracts and response shapes.
 - `docs/implementations.md`: implementation rules and scoring logic.
 - `docs/tasks.md`: execution checklist.
@@ -18,6 +19,7 @@ References:
 ### renderer-server (microservice)
 
 Responsibilities:
+
 - expose `POST /api/v1/render`.
 - verify renderer bearer token from `Authorization` header.
 - reject missing/malformed token (`401`) and token mismatch (`403`).
@@ -25,6 +27,7 @@ Responsibilities:
 - enforce overload/timeout behavior and return defined errors.
 
 Non-responsibilities:
+
 - phishing scoring.
 - cache policy.
 - cloud storage policy.
@@ -33,6 +36,7 @@ Non-responsibilities:
 ### fullstack (backend + frontend)
 
 Responsibilities:
+
 - expose backend API contract defined in `docs/api.md#backend`.
 - orchestrate cache -> renderer -> fishing checker pipeline.
 - map internal camelCase TypeScript models to snake_case API response fields.
@@ -62,9 +66,11 @@ Responsibilities:
 ### Image Cache Domain
 
 Suggested path:
+
 - `fullstack/src/server/domains/image-cache/`
 
 Responsibilities:
+
 - in-memory metadata cache keyed by link.
 - TTL refresh timeout behavior.
 - frequency-based eviction with max size.
@@ -78,9 +84,11 @@ Responsibilities:
 ### Cloudflare R2 Client
 
 Suggested path:
+
 - `fullstack/src/server/clients/cloudflare-r2/`
 
 Responsibilities:
+
 - read/write/delete image objects in R2.
 - no cache policy logic.
 - invoked via callback/hooks from cache or services.
@@ -88,9 +96,11 @@ Responsibilities:
 ### Website Renderer Client
 
 Suggested path:
+
 - `fullstack/src/server/clients/renderer/`
 
 Responsibilities:
+
 - call renderer microservice endpoint in `docs/api.md#website-renderer-microservice`.
 - set `Authorization: Bearer <WEBSITE_RENDERER_TOKEN>`.
 - expose minimal method: `getImage`.
@@ -99,9 +109,11 @@ Responsibilities:
 ### Fishing Checker Domain
 
 Suggested path:
+
 - `fullstack/src/server/domains/fishing-checker/`
 
 Responsibilities:
+
 - expose only `getSusIndex(input): SusIndex`.
 - manually resolve redirects from input URL.
 - collect `redirectCount`, `finalUrl`, and HTML.
@@ -116,9 +128,11 @@ Responsibilities:
 ### API Mapping Boundary
 
 Suggested path:
+
 - `fullstack/src/server/mappers/sus-index.mapper.ts`
 
 Responsibilities:
+
 - map internal camelCase `SusIndex` to API snake_case fields:
   - `redirectMatch` -> `redirect_match`
   - `redirectCount` -> `redirect_count`
@@ -138,6 +152,7 @@ Responsibilities:
 ## Configuration Ownership
 
 Place under `fullstack/src/server/config/` with runtime validation:
+
 - `WEBSITE_RENDERER_BASE_URL`
 - `WEBSITE_RENDERER_TOKEN`
 - cache refresh timeout default
@@ -146,6 +161,7 @@ Place under `fullstack/src/server/config/` with runtime validation:
 - fishing checker max redirects
 
 `renderer-server` should also validate:
+
 - renderer token secret
 - renderer concurrency/queue limits
 - renderer default timeout
@@ -163,13 +179,15 @@ Place under `fullstack/src/server/config/` with runtime validation:
 ## Testing Architecture
 
 Place tests near each logic area, and keep test scope explicit:
-- `fullstack/src/server/domains/**/*.test.ts`: domain unit tests.
-- `fullstack/src/server/services/**/*.test.ts`: orchestration unit/integration tests.
-- `fullstack/src/app/api/**/*.test.ts`: route contract tests.
-- `fullstack/tests/integration/`: cross-module integration tests with mocks.
-- `fullstack/tests/e2e/`: end-to-end API behavior tests.
+
+- `src/server/domains/**/*.test.ts`: domain unit tests.
+- `src/server/services/**/*.test.ts`: orchestration unit/integration tests.
+- `src/app/api/**/*.test.ts`: route contract tests.
+- `tests/integration/`: cross-module integration tests with mocks.
+- `tests/e2e/`: end-to-end API behavior tests.
 
 Testing requirements:
+
 - mock renderer and Cloudflare R2 dependencies in CI where required.
 - include phishing checker false-positive/false-negative benchmark cases.
 - target coverage as stated in `docs/tasks.md`.

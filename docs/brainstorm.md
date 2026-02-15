@@ -21,7 +21,7 @@ False information detection pipeline.
 
 - sent URL and get markdown result (should not have prompt injection)
 
-- analyze the 
+- analyze the
 
 ## Clipboard & Website Preview
 

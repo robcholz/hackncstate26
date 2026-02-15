@@ -17,4 +17,3 @@ use this frequently to keep sync with the remote!
 ```shell
 git fetch
 ```
-
