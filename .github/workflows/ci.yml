@@ -83,8 +83,31 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Build and start stack
-        run: docker compose up -d --build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build web image (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: hackncstate26-nextjs:latest
+          load: true
+          cache-from: type=gha,scope=web-e2e
+          cache-to: type=gha,mode=max,scope=web-e2e
+
+      - name: Build renderer image (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./renderer-server
+          file: ./renderer-server/Dockerfile
+          tags: hackncstate26-renderer:latest
+          load: true
+          cache-from: type=gha,scope=renderer-e2e
+          cache-to: type=gha,mode=max,scope=renderer-e2e
+
+      - name: Start stack
+        run: docker compose up -d --no-build
 
       - name: Run E2E test
         run: python3 e2e/test_stack.py
