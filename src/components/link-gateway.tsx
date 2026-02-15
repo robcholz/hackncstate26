@@ -50,7 +50,6 @@ interface ClipboardInterceptPayload {
   captured_at: string;
 }
 
-const CLIPBOARD_INTERCEPT_ENDPOINT = "/api/v1/clipboard/paste";
 const MAX_INTERCEPT_TEXT_CHARS = 4000;
 
 export function LinkGateway() {
@@ -125,20 +124,7 @@ export function LinkGateway() {
 
   useEffect(() => {
     const emitClipboardIntercept = (payload: ClipboardInterceptPayload): void => {
-      const body = JSON.stringify(payload);
-
-      if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-        const blob = new Blob([body], { type: "application/json" });
-        const accepted = navigator.sendBeacon(CLIPBOARD_INTERCEPT_ENDPOINT, blob);
-        if (accepted) return;
-      }
-
-      void fetch(CLIPBOARD_INTERCEPT_ENDPOINT, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body,
-        keepalive: true
-      });
+      window.phishingLensBridge?.captureClipboardEvent?.(payload);
     };
 
     const emitShortcutIntercept = (target: EventTarget | null, telemetry?: ShortcutTelemetry): void => {

@@ -20,6 +20,7 @@ const config = [
       "coverage/**",
       "next-env.d.ts",
       "forge.config.cjs",
+      "electron/**",
       "out/**",
       ".venv*/**",
       "renderer-server/**"

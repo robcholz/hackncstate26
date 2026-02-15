@@ -7,6 +7,10 @@ npm run test
 npm run test:coverage
 npm run lint
 
+npm --prefix electron run format
+npm --prefix electron run lint
+npm --prefix electron run build
+
 ruff check renderer-server
 ruff format renderer-server
 python3 renderer-server/test.py

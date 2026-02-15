@@ -10,9 +10,9 @@ const healthCheckUrl = `${startUrl}/open`;
 const forwardedArgs = process.argv.slice(2);
 
 let shuttingDown = false;
-let electronProcess = null;
+let electronProcess: ReturnType<typeof spawn> | null = null;
 
-const nextProcess = spawn(npmCommand, ["run", "dev", "--", "--hostname", host, "--port", port], {
+const nextProcess = spawn(npmCommand, ["--prefix", "..", "run", "dev", "--", "--hostname", host, "--port", port], {
   stdio: "inherit",
   env: {
     ...process.env,
@@ -55,7 +55,7 @@ async function bootElectron() {
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
 
-function shutdown(code) {
+function shutdown(code: number) {
   if (shuttingDown) return;
   shuttingDown = true;
 
@@ -67,13 +67,13 @@ function shutdown(code) {
   }, 300);
 }
 
-function terminateProcess(child) {
+function terminateProcess(child: ReturnType<typeof spawn> | null) {
   if (!child || child.killed) return;
 
   child.kill("SIGTERM");
 }
 
-async function waitForServer(url) {
+async function waitForServer(url: string): Promise<boolean> {
   const maxAttempts = 100;
   const delayMs = 400;
 
@@ -88,7 +88,7 @@ async function waitForServer(url) {
   return false;
 }
 
-async function canReach(url) {
+async function canReach(url: string): Promise<boolean> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 2000);
 

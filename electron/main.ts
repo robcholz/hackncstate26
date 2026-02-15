@@ -1,12 +1,11 @@
 import path from "node:path";
-import { createRequire } from "node:module";
 import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import readline from "node:readline";
 
-const require = createRequire(import.meta.url);
-const { app, BrowserWindow, ipcMain, Notification, screen, shell } = require("electron");
+import { app, BrowserWindow, ipcMain, Notification, screen, shell } from "electron";
+import type { Input } from "electron";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +17,8 @@ const CUSTOM_PROTOCOL = "phishinglens";
 const PASTE_SHORTCUT_CHANNEL = "clipboard:paste-shortcut-detected";
 const SHOW_OVERLAY_CHANNEL = "clipboard:show-overlay";
 const OPEN_EXTERNAL_CHANNEL = "shell:open-external";
+const CLIPBOARD_CAPTURE_CHANNEL = "clipboard:capture";
+const MAX_CLIPBOARD_EVENTS = 200;
 const OVERLAY_HIDE_MS = 1400;
 const PASTE_PROMPT_MESSAGE = "Are you sure you want to paste?";
 const PASTE_CONFIRM_MESSAGE = "Paste paused. Press paste again within 2.5s to confirm.";
@@ -26,16 +27,34 @@ const PASTE_MONITOR_RESTART_MS = 2200;
 const INPUT_MONITORING_SETTINGS_URL = "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent";
 const ACCESSIBILITY_SETTINGS_URL = "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";
 
-let mainWindow = null;
+interface ClipboardCapturePayload {
+  kind: "paste" | "shortcut";
+  page: string;
+  target_tag: string | null;
+  url_context: string | null;
+  clipboard_text: string;
+  clipboard_text_length: number;
+  clipboard_text_truncated: boolean;
+  blocked: boolean;
+  entropy: number | null;
+  captured_at: string;
+}
+
+interface ClipboardCaptureEvent extends ClipboardCapturePayload {
+  event_id: string;
+}
+
+let mainWindow: BrowserWindow | null = null;
 let pendingTargetUrl = extractIncomingUrl(process.argv);
-let overlayWindows = [];
-let overlayHideTimer = null;
-let pasteMonitorProcess = null;
-let pasteMonitorRestartTimer = null;
+let overlayWindows: BrowserWindow[] = [];
+let overlayHideTimer: ReturnType<typeof setTimeout> | null = null;
+let pasteMonitorProcess: ReturnType<typeof spawn> | null = null;
+let pasteMonitorRestartTimer: ReturnType<typeof setTimeout> | null = null;
 let didOpenPermissionSettings = false;
 let didLogPasteMonitorReady = false;
 let isAppQuitting = false;
 let lastSystemNotificationAt = 0;
+const clipboardEvents: ClipboardCaptureEvent[] = [];
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
@@ -104,7 +123,7 @@ function createMainWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(__dirname, "preload.mjs")
+      preload: path.join(__dirname, "preload.js")
     }
   });
 
@@ -134,7 +153,7 @@ function createMainWindow() {
   });
 }
 
-function openInRealBrowser(url) {
+function openInRealBrowser(url: string) {
   if (typeof url !== "string" || url.length === 0) return;
 
   // Cheap guard: only open http(s) externally.
@@ -168,6 +187,16 @@ function registerIpcHandlers() {
 
   ipcMain.on(OPEN_EXTERNAL_CHANNEL, (_event, url) => {
     openInRealBrowser(typeof url === "string" ? url : "");
+  });
+
+  ipcMain.on(CLIPBOARD_CAPTURE_CHANNEL, (_event, payload) => {
+    const parsed = parseClipboardCapturePayload(payload);
+    if (!parsed) return;
+
+    clipboardEvents.unshift(parsed);
+    if (clipboardEvents.length > MAX_CLIPBOARD_EVENTS) {
+      clipboardEvents.length = MAX_CLIPBOARD_EVENTS;
+    }
   });
 }
 
@@ -301,7 +330,7 @@ function buildOverlayWindowHtml() {
   return `data:text/html;charset=UTF-8,${encodeURIComponent(html)}`;
 }
 
-function showSystemPasteOverlay(message = PASTE_PROMPT_MESSAGE) {
+function showSystemPasteOverlay(message: string = PASTE_PROMPT_MESSAGE) {
   if (overlayWindows.length === 0) {
     rebuildOverlayWindows();
   }
@@ -339,7 +368,7 @@ function showSystemPasteOverlay(message = PASTE_PROMPT_MESSAGE) {
   showPasteNotification(message);
 }
 
-function showPasteNotification(message) {
+function showPasteNotification(message: string) {
   if (process.platform !== "darwin") return;
   if (!Notification?.isSupported?.()) return;
   if (typeof message !== "string" || message.length === 0) return;
@@ -359,7 +388,7 @@ function showPasteNotification(message) {
   }
 }
 
-function handlePasteShortcutDetected(source = "unknown", details = {}) {
+function handlePasteShortcutDetected(source = "unknown", details: Record<string, unknown> = {}) {
   const blocked = details?.blocked === true;
   const reason = typeof details?.reason === "string" ? details.reason : null;
   const entropy = typeof details?.entropy === "number" ? details.entropy : null;
@@ -393,7 +422,7 @@ async function startMacPasteMonitor() {
   // In packaged builds, the app runs from an ASAR. External tools like `swiftc`
   // cannot read source files inside ASAR paths, so we copy the Swift source to
   // a real filesystem location first.
-  const bundledSourcePath = path.join(__dirname, "macos-paste-monitor.swift");
+  const bundledSourcePath = path.join(__dirname, "../macos-paste-monitor.swift");
   const extractedSourcePath = path.join(app.getPath("userData"), "phishinglens-paste-monitor.swift");
   const sourcePath = await ensurePasteMonitorSource(bundledSourcePath, extractedSourcePath);
   if (!sourcePath) return;
@@ -473,7 +502,10 @@ async function startMacPasteMonitor() {
   });
 }
 
-async function ensurePasteMonitorSource(bundledSourcePath, extractedSourcePath) {
+async function ensurePasteMonitorSource(
+  bundledSourcePath: string,
+  extractedSourcePath: string
+): Promise<string | null> {
   try {
     const data = await fs.readFile(bundledSourcePath);
     await fs.writeFile(extractedSourcePath, data);
@@ -505,7 +537,7 @@ function schedulePasteMonitorRestart() {
   }, PASTE_MONITOR_RESTART_MS);
 }
 
-function parsePasteMonitorLine(line) {
+function parsePasteMonitorLine(line: string) {
   if (typeof line !== "string" || line.length === 0) return null;
 
   try {
@@ -540,7 +572,7 @@ function parsePasteMonitorLine(line) {
   }
 }
 
-function handlePasteMonitorStderr(line) {
+function handlePasteMonitorStderr(line: string) {
   const text = line.trim();
   if (text.length === 0) return;
 
@@ -559,7 +591,7 @@ function handlePasteMonitorStderr(line) {
   console.warn("[paste-monitor]", text);
 }
 
-async function ensurePasteMonitorBinary(sourcePath, binaryPath) {
+async function ensurePasteMonitorBinary(sourcePath: string, binaryPath: string): Promise<boolean> {
   try {
     const [sourceStat, binaryStat] = await Promise.all([statSafe(sourcePath), statSafe(binaryPath)]);
     const needsCompile =
@@ -580,7 +612,7 @@ async function ensurePasteMonitorBinary(sourcePath, binaryPath) {
   }
 }
 
-async function compilePasteMonitor(sourcePath, binaryPath) {
+async function compilePasteMonitor(sourcePath: string, binaryPath: string): Promise<boolean> {
   return await new Promise((resolve) => {
     const compiler = spawn("xcrun", ["swiftc", "-O", sourcePath, "-o", binaryPath], {
       stdio: ["ignore", "pipe", "pipe"]
@@ -608,7 +640,7 @@ async function compilePasteMonitor(sourcePath, binaryPath) {
   });
 }
 
-async function statSafe(filePath) {
+async function statSafe(filePath: string): Promise<Awaited<ReturnType<typeof fs.stat>> | null> {
   try {
     return await fs.stat(filePath);
   } catch {
@@ -616,14 +648,14 @@ async function statSafe(filePath) {
   }
 }
 
-function isPasteShortcutInput(input) {
+function isPasteShortcutInput(input: Input) {
   if (!input || input.type !== "keyDown") return false;
   if (input.alt || input.shift) return false;
   if (!(input.meta || input.control)) return false;
   return typeof input.key === "string" && input.key.toLowerCase() === "v";
 }
 
-function routeIncomingUrl(rawUrl) {
+function routeIncomingUrl(rawUrl: string) {
   const targetUrl = normalizeIncomingUrl(rawUrl);
   if (!targetUrl) return false;
 
@@ -665,13 +697,13 @@ function buildShellUrl() {
   return new URL(PREVIEW_ROUTE, DEFAULT_START_URL).toString();
 }
 
-function buildPreviewUrl(targetUrl) {
+function buildPreviewUrl(targetUrl: string) {
   const url = new URL(PREVIEW_ROUTE, DEFAULT_START_URL);
   url.searchParams.set("url", targetUrl);
   return url.toString();
 }
 
-function isInternalUrl(urlString) {
+function isInternalUrl(urlString: string) {
   try {
     return new URL(urlString).origin === APP_ORIGIN;
   } catch {
@@ -679,7 +711,7 @@ function isInternalUrl(urlString) {
   }
 }
 
-function extractIncomingUrl(argv) {
+function extractIncomingUrl(argv: string[]) {
   for (const arg of argv) {
     const normalized = normalizeIncomingUrl(arg);
     if (normalized) return normalized;
@@ -688,7 +720,7 @@ function extractIncomingUrl(argv) {
   return null;
 }
 
-function normalizeIncomingUrl(rawUrl) {
+function normalizeIncomingUrl(rawUrl: string) {
   if (typeof rawUrl !== "string" || rawUrl.length === 0) return null;
 
   const directUrl = normalizeHttpUrl(rawUrl);
@@ -709,7 +741,7 @@ function normalizeIncomingUrl(rawUrl) {
   return normalizeHttpUrl(inlineValue);
 }
 
-function normalizeHttpUrl(candidate) {
+function normalizeHttpUrl(candidate: string | null) {
   if (typeof candidate !== "string" || candidate.length === 0) return null;
   const decoded = decodeURIComponentSafe(candidate);
 
@@ -725,10 +757,67 @@ function normalizeHttpUrl(candidate) {
   }
 }
 
-function decodeURIComponentSafe(value) {
+function decodeURIComponentSafe(value: string) {
   try {
     return decodeURIComponent(value);
   } catch {
     return value;
+  }
+}
+
+function parseClipboardCapturePayload(payload: unknown): ClipboardCaptureEvent | null {
+  if (!payload || typeof payload !== "object") return null;
+
+  const candidate = payload as Record<string, unknown>;
+  const kind = candidate.kind;
+  const page = candidate.page;
+  const targetTag = candidate.target_tag;
+  const urlContext = candidate.url_context;
+  const clipboardText = candidate.clipboard_text;
+  const clipboardTextLength = candidate.clipboard_text_length;
+  const clipboardTextTruncated = candidate.clipboard_text_truncated;
+  const blocked = candidate.blocked;
+  const entropy = candidate.entropy;
+  const capturedAt = candidate.captured_at;
+
+  if (kind !== "paste" && kind !== "shortcut") return null;
+  if (typeof page !== "string" || page.trim().length === 0 || page.length > 256) return null;
+  if (targetTag !== null && targetTag !== undefined && (typeof targetTag !== "string" || targetTag.length > 64)) {
+    return null;
+  }
+  if (urlContext !== null && urlContext !== undefined && !isValidHttpUrl(urlContext)) return null;
+  if (typeof clipboardText !== "string" || clipboardText.length > 4000) return null;
+  if (typeof clipboardTextLength !== "number" || !Number.isInteger(clipboardTextLength) || clipboardTextLength < 0) {
+    return null;
+  }
+  if (typeof clipboardTextTruncated !== "boolean") return null;
+  if (typeof blocked !== "boolean") return null;
+  if (entropy !== null && entropy !== undefined) {
+    if (typeof entropy !== "number" || !Number.isFinite(entropy) || entropy < 0 || entropy > 10) return null;
+  }
+  if (typeof capturedAt !== "string" || Number.isNaN(Date.parse(capturedAt))) return null;
+
+  return {
+    event_id: crypto.randomUUID(),
+    kind,
+    page: page.trim(),
+    target_tag: typeof targetTag === "string" ? targetTag : null,
+    url_context: typeof urlContext === "string" ? urlContext : null,
+    clipboard_text: clipboardText,
+    clipboard_text_length: clipboardTextLength,
+    clipboard_text_truncated: clipboardTextTruncated,
+    blocked,
+    entropy: typeof entropy === "number" ? entropy : null,
+    captured_at: capturedAt
+  };
+}
+
+function isValidHttpUrl(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
   }
 }
