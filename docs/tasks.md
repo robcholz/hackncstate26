@@ -2,29 +2,57 @@
 
 ## MVP
 
-### Component Name 1
+### Website Renderer Microservice
 
-- [ ] todo 1 
+- [ ] Implement `POST /api/v1/render` request handling (`url`, `timeout`).
+- [ ] Enforce bearer token auth via `Authorization` header.
+- [ ] Return `401 unauthorized` for missing/malformed auth header.
+- [ ] Return `403 forbidden` for token mismatch.
+- [ ] Render webpage screenshot and return base64 `image`.
+- [ ] Handle overload path and return `429 too_many_requests`.
+- [ ] Handle render timeout and return timeout-style error response.
+- [ ] Testing: add unit/integration tests for auth validation, render success path, overload handling, and timeout behavior.
 
-### Component Name 2
+### Backend API
 
-- [ ] todo 1
+- [ ] Implement backend route response shape per `docs/api.md#backend`.
+- [ ] Check image cache before rendering.
+- [ ] On cache miss/expiry, call Website Renderer `getImage`.
+- [ ] Run Fishing Checker and attach `sus_index` in response.
+- [ ] Return `image` and `sus_index` with snake_case API fields.
+- [ ] Testing: add integration tests for backend response contract (`image` + `sus_index`) and error paths.
 
-### Component Name 3
+### Image Cache Logic
 
-- [ ] todo 1
+- [ ] Implement in-memory metadata cache with key `<link>`.
+- [ ] Store `create_time` and expire items after refresh timeout (default 2 minutes).
+- [ ] Implement frequency-based eviction policy with max size (default 20).
+- [ ] Expose only `setRefreshTimeout(ms)`, `setCacheMaxSize(size)`, `putImage(image)`, `getImage(): Image`.
+- [ ] Add callback hooks so cache can trigger Cloudflare R2 sync without direct dependency.
+- [ ] Keep Cloudflare R2 API module separate from cache module.
+- [ ] Testing: add unit tests for eviction policy, refresh timeout, and callback behavior; mock Cloudflare R2 for CI.
 
 ## Stage 1
 
-### Component Name 1
+### Fishing Checker Logic
 
-- [ ] todo 1
+- [ ] Expose one public function: `getSusIndex(input): SusIndex`.
+- [ ] Implement manual redirect flow inside checker starting from input `url`.
+- [ ] Track `redirectCount`, `finalUrl`, and final HTML body.
+- [ ] Add stop conditions: max redirects, timeout, redirect loop.
+- [ ] Implement confusable-domain detection with hardcoded ASCII, Unicode, and multi-char lookalike patterns.
+- [ ] Implement `domainSimilarity` scoring with `editScore`, `homoglyphScore`, `brandPrefixBonus`.
+- [ ] Implement hardcoded suspicious keyword list and `keywordMatch` scoring from HTML content.
+- [ ] Implement `passwordInputMatch` scoring from password/form patterns in HTML.
+- [ ] Implement `redirectMatch` scoring from `redirectCount`.
+- [ ] Implement normalized `rate` scoring from 4 factors (`1-10` clamp).
+- [ ] Add TS types (`Score1To10`, `SusIndex`) using camelCase internal fields.
+- [ ] Map camelCase internal fields to snake_case API response fields.
+- [ ] Testing: add unit tests for confusable-domain detection, keyword scoring, password input scoring, redirect scoring, and FP/FN benchmark cases.
 
-### Component Name 2
+### Final Wiring
 
-- [ ] todo 1
-
-### Component Name 3
-
-- [ ] todo 1 
-
+- [ ] Wire cache + renderer + checker in backend API route.
+- [ ] Ensure checker can run even if renderer output is unavailable for scoring signals.
+- [ ] Add safe defaults (`1`) for missing checker factors under timeout/fetch failure.
+- [ ] Testing: add end-to-end wiring tests with mocked external dependencies and confirm coverage target (>95% excluding Cloudflare R2 and Website Renderer logic).
