@@ -402,7 +402,9 @@ async function startMacPasteMonitor() {
 
   const ready = await ensurePasteMonitorBinary(sourcePath, binaryPath);
   if (!ready) {
-    showPasteNotification("Paste monitor failed to start. If packaged, ensure Xcode CLT is installed and permissions are granted.");
+    showPasteNotification(
+      "Paste monitor failed to start. If packaged, ensure Xcode CLT is installed and permissions are granted."
+    );
     return;
   }
 
