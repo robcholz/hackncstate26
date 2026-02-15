@@ -15,12 +15,12 @@
 
 ### Backend API
 
-- [ ] Implement backend route response shape per `docs/api.md#backend`.
-- [ ] Check image cache before rendering.
-- [ ] On cache miss/expiry, call Website Renderer `getImage`.
-- [ ] Run Fishing Checker and attach `sus_index` in response.
-- [ ] Return `image` and `sus_index` with snake_case API fields.
-- [ ] Testing: add integration tests for backend response contract (`image` + `sus_index`) and error paths.
+- [x] Implement backend route response shape per `docs/api.md#backend`.
+- [x] Check image cache before rendering.
+- [x] On cache miss/expiry, call Website Renderer `getImage`.
+- [x] Run Fishing Checker and attach `sus_index` in response.
+- [x] Return `image` and `sus_index` with snake_case API fields.
+- [x] Testing: add integration tests for backend response contract (`image` + `sus_index`) and error paths.
 
 ### Image Cache Logic
 
