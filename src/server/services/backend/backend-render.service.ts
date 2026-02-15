@@ -27,14 +27,36 @@ const SAFE_DEFAULT_SUS_INDEX: SusIndex = {
   passwordInputMatch: 1
 };
 
+const DEFAULT_CHECKER_TIMEOUT_MS = 3_000;
+
+function getCheckerTimeoutMs(input: BackendRenderInput): number {
+  if (!Number.isFinite(input.timeout) || input.timeout <= 0) {
+    return DEFAULT_CHECKER_TIMEOUT_MS;
+  }
+
+  return Math.floor(input.timeout);
+}
+
 async function getSusIndexSafe(
   input: BackendRenderInput,
   checker: BackendRenderDependencies["checker"]
 ): Promise<SusIndex> {
+  const timeoutMs = getCheckerTimeoutMs(input);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
   try {
-    return await checker({ url: input.url, timeout: input.timeout });
+    const checkerPromise = checker({ url: input.url, timeout: input.timeout }).catch(() => SAFE_DEFAULT_SUS_INDEX);
+    const timeoutPromise = new Promise<SusIndex>((resolve) => {
+      timer = setTimeout(() => resolve(SAFE_DEFAULT_SUS_INDEX), timeoutMs);
+    });
+
+    return await Promise.race([checkerPromise, timeoutPromise]);
   } catch {
     return SAFE_DEFAULT_SUS_INDEX;
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
   }
 }
 
@@ -53,17 +75,13 @@ export async function getBackendRenderResult(
     return { image: cached.image, susIndex };
   }
 
-  try {
-    const rendererClient = deps.rendererClient ?? getOrCreateRendererClient();
-    const image = await rendererClient.getImage({
-      url: input.url,
-      timeout: input.timeout
-    });
-    cache.putImage({ link: input.url, image });
+  const rendererClient = deps.rendererClient ?? getOrCreateRendererClient();
+  const image = await rendererClient.getImage({
+    url: input.url,
+    timeout: input.timeout
+  });
+  cache.putImage({ link: input.url, image });
 
-    const susIndex = await susIndexPromise;
-    return { image, susIndex };
-  } catch (error) {
-    throw error;
-  }
+  const susIndex = await susIndexPromise;
+  return { image, susIndex };
 }

@@ -119,6 +119,79 @@ describe("getBackendRenderResult", () => {
     });
   });
 
+  it("uses safe checker defaults when checker exceeds timeout on cache hit", async () => {
+    vi.useFakeTimers();
+    try {
+      const cache = createCacheMock({
+        link: "https://cached-timeout.example.com",
+        image: "cached-base64",
+        createTime: 1
+      });
+      const checker = vi.fn(
+        () =>
+          new Promise<SusIndex>((resolve) => {
+            setTimeout(() => resolve(sampleSusIndex), 1000);
+          })
+      );
+
+      const resultPromise = getBackendRenderResult(
+        { url: "https://cached-timeout.example.com", timeout: 10 },
+        { cache, checker }
+      );
+      await vi.advanceTimersByTimeAsync(10);
+
+      await expect(resultPromise).resolves.toEqual({
+        image: "cached-base64",
+        susIndex: {
+          rate: 1,
+          redirectMatch: 1,
+          redirectCount: 0,
+          domainSimilarity: 1,
+          keywordMatch: 1,
+          passwordInputMatch: 1
+        }
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("uses safe checker defaults when checker exceeds timeout on cache miss", async () => {
+    vi.useFakeTimers();
+    try {
+      const cache = createCacheMock(null);
+      const rendererClient: RendererClient = {
+        getImage: vi.fn().mockResolvedValue("renderer-base64")
+      };
+      const checker = vi.fn(
+        () =>
+          new Promise<SusIndex>((resolve) => {
+            setTimeout(() => resolve(sampleSusIndex), 1000);
+          })
+      );
+
+      const resultPromise = getBackendRenderResult(
+        { url: "https://miss-timeout.example.com", timeout: 10 },
+        { cache, rendererClient, checker }
+      );
+      await vi.advanceTimersByTimeAsync(10);
+
+      await expect(resultPromise).resolves.toEqual({
+        image: "renderer-base64",
+        susIndex: {
+          rate: 1,
+          redirectMatch: 1,
+          redirectCount: 0,
+          domainSimilarity: 1,
+          keywordMatch: 1,
+          passwordInputMatch: 1
+        }
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("propagates renderer failure without waiting for checker completion", async () => {
     vi.useFakeTimers();
     try {
