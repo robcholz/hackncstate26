@@ -164,7 +164,6 @@ export function createImageCache(hooks: ImageCacheHooks = {}): ImageCacheApi {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var __imageCache__: ImageCacheApi | undefined;
 }
 
