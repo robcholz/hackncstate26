@@ -243,8 +243,15 @@ export function LinkGateway() {
       event.preventDefault();
       event.stopPropagation();
 
-      // Use window.open so Electron can intercept it and reroute to Safari.
-      window.open(resolved.toString(), "_blank", "noopener,noreferrer");
+      const url = resolved.toString();
+
+      if (typeof window.phishingLensBridge?.openExternal === "function") {
+        window.phishingLensBridge.openExternal(url);
+        return;
+      }
+
+      // Fallback: Electron's main process will intercept the open.
+      window.open(url, "_blank", "noopener,noreferrer");
     };
 
     document.addEventListener("click", onDocumentClick, true);
@@ -255,7 +262,12 @@ export function LinkGateway() {
 
   const openInBrowser = (): void => {
     if (!normalizedTarget) return;
-    // In Electron, the main process intercepts this and routes it to Safari.
+    if (typeof window.phishingLensBridge?.openExternal === "function") {
+      window.phishingLensBridge.openExternal(normalizedTarget);
+      return;
+    }
+
+    // Fallback: Electron's main process intercepts this and routes it to Safari.
     window.open(normalizedTarget, "_blank", "noopener,noreferrer");
   };
 

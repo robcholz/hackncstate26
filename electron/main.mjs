@@ -137,10 +137,16 @@ function createMainWindow() {
 function openInRealBrowser(url) {
   if (typeof url !== "string" || url.length === 0) return;
 
+  // Cheap guard: only open http(s) externally.
+  if (!/^https?:/i.test(url)) return;
+
+  console.info(`[shell] open external: ${url}`);
+
   // macOS: explicitly use Safari (not the system default browser) to avoid
   // recursion when Phishing Lens is set as the default handler for http/https.
   if (process.platform === "darwin") {
     try {
+      showPasteNotification("Opening in Safari.");
       const child = spawn("/usr/bin/open", ["-a", "Safari", url], {
         stdio: "ignore",
         detached: true
