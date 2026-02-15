@@ -126,7 +126,9 @@ func maxTokenEntropy(in text: String) -> (entropy: Double, tokenLength: Int) {
   return (bestEntropy, bestLen)
 }
 
-let confirmationWindowSeconds = 1.25
+// How long the user has to press paste again after we block the first paste.
+// In practice, 1.25s is too tight and feels "broken" in many apps.
+let confirmationWindowSeconds = 2.5
 let entropyThreshold = 4.4
 let entropyMinTokenLen = 24
 
