@@ -10,7 +10,7 @@ import type { Input } from "electron";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DEFAULT_START_URL = process.env.ELECTRON_START_URL ?? "http://127.0.0.1:3001";
+const DEFAULT_START_URL = process.env.ELECTRON_START_URL ?? "http://127.0.0.1:3000";
 const APP_ORIGIN = new URL(DEFAULT_START_URL).origin;
 const PREVIEW_ROUTE = "/open";
 const CUSTOM_PROTOCOL = "phishinglens";
@@ -687,10 +687,10 @@ function registerProtocolClients() {
     app.setAsDefaultProtocolClient(CUSTOM_PROTOCOL);
   }
 
-  if (app.isPackaged) {
-    app.setAsDefaultProtocolClient("http");
-    app.setAsDefaultProtocolClient("https");
-  }
+  // Attempt browser-protocol registration in all modes; OS policy may ignore
+  // this for unsigned/dev builds, but packaged app can still be selected later.
+  app.setAsDefaultProtocolClient("http");
+  app.setAsDefaultProtocolClient("https");
 }
 
 function buildShellUrl() {

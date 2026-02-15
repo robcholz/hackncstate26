@@ -17,3 +17,5 @@ renderer-server/screenshot.png
 
 __pycache__/
 *.pyc
+
+electron/out
