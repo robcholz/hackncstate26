@@ -11,6 +11,8 @@ app = FastAPI()
 
 # job queue
 jobs = queue.Queue()
+worker_bootstrap_lock = threading.Lock()
+workers_started = False
 
 
 class Item(BaseModel):
@@ -24,11 +26,7 @@ def take_screenshot(item: Item):
     # each request gets its own result queue
     result_queue = queue.Queue(maxsize=1)
 
-    jobs.put({
-        "url": item.url,
-        "timeout": item.timeout,
-        "result_queue": result_queue
-    })
+    jobs.put({"url": item.url, "timeout": item.timeout, "result_queue": result_queue})
 
     print("got url")
 
@@ -55,8 +53,25 @@ def worker():
             except Exception as e:
                 job["result_queue"].put(f"error: {e}")
 
-def main():
-    # start workers
-    for _ in range(4):
-        threading.Thread(target=worker, daemon=True).start()
 
+def main():
+    global workers_started
+    with worker_bootstrap_lock:
+        if workers_started:
+            return
+        # start workers
+        for _ in range(20):
+            threading.Thread(target=worker, daemon=True).start()
+        workers_started = True
+
+
+@app.on_event("startup")
+def startup():
+    main()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    main()
+    uvicorn.run(app, host="0.0.0.0", port=8000)

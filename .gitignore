@@ -1,6 +1,10 @@
 .idea
 .vscode
 
+.next
+coverage
 node_modules
-venv
-targets
+
+renderer-server/.tracecov
+renderer-server/.venv
+renderer-server/test.cover
