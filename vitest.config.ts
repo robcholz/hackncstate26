@@ -6,6 +6,11 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     globals: true,
     restoreMocks: true,
-    clearMocks: true
+    clearMocks: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      reportsDirectory: "./coverage"
+    }
   }
 });

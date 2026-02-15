@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-#todo
+npm run format
+npm run build
+npm run test
+npm run test:coverage
+npm run lint

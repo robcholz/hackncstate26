@@ -237,6 +237,13 @@ function extractVisibleText(html: string): string {
     .toLowerCase();
 }
 
+function stripNonMarkupContent(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/giu, " ")
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/giu, " ")
+    .replace(/<!--([\s\S]*?)-->/g, " ");
+}
+
 function getKeywordMatchScore(html: string | null): Score1To10 {
   if (!html) return 1;
 
@@ -279,15 +286,18 @@ function getOriginSafe(urlString: string): string | null {
 function getPasswordInputMatchScore(html: string | null, finalUrl: string): Score1To10 {
   if (!html) return 1;
 
-  const hasPasswordField = /<input[^>]*type\s*=\s*["']?password["']?/iu.test(html);
+  const cleanedHtml = stripNonMarkupContent(html);
+  const hasPasswordField = /<input[^>]*\btype\s*=\s*["']?password["']?[^>]*>/iu.test(cleanedHtml);
   if (!hasPasswordField) return 1;
 
   const finalOrigin = getOriginSafe(finalUrl);
   let suspiciousSignals = 0;
 
-  const formActionMatches = Array.from(html.matchAll(/<form[^>]*action\s*=\s*["']([^"']+)["'][^>]*>/giu));
+  const formActionMatches = Array.from(
+    cleanedHtml.matchAll(/<form[^>]*\baction\s*=\s*(?:"([^"]*)"|'([^']*)'|([^"'>\s]+))[^>]*>/giu)
+  );
   for (const match of formActionMatches) {
-    const action = match[1];
+    const action = match[1] ?? match[2] ?? match[3];
     if (!action || !finalOrigin) continue;
 
     try {
@@ -302,13 +312,17 @@ function getPasswordInputMatchScore(html: string | null, finalUrl: string): Scor
   }
 
   const hasHiddenIdentityField =
-    /<input[^>]*type\s*=\s*["']?hidden["']?[^>]*name\s*=\s*["'][^"']*(user|email|login)[^"']*["']/iu.test(html);
+    /<input\b(?=[^>]*\btype\s*=\s*["']?hidden["']?)(?=[^>]*\bname\s*=\s*["']?[^"'>]*(user|email|login)[^"'>]*["']?)[^>]*>/iu.test(
+      cleanedHtml
+    );
   if (hasHiddenIdentityField) {
     suspiciousSignals += 1;
   }
 
   const hasUrgencyPrompt =
-    /(verify your account|security alert|urgent action required|unlock account|reset password)/iu.test(html);
+    /(verify your account|security alert|urgent action required|unlock account|reset password)/iu.test(
+      extractVisibleText(cleanedHtml)
+    );
   if (hasUrgencyPrompt) {
     suspiciousSignals += 1;
   }
@@ -397,8 +411,6 @@ async function resolveRedirectsAndHtml(input: GetSusIndexInput): Promise<Redirec
       return { redirectCount, finalUrl: currentUrl, html: null };
     }
   }
-
-  return { redirectCount, finalUrl: currentUrl, html: null };
 }
 
 export async function getSusIndex(input: GetSusIndexInput): Promise<SusIndex> {
