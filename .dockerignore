@@ -12,4 +12,5 @@ renderer-server
 e2e
 docs
 scripts
+electron
 .env*
