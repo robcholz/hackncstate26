@@ -53,6 +53,6 @@
 ### Final Wiring
 
 - [x] Wire cache + renderer + checker in backend API route.
-- [ ] Ensure checker can run even if renderer output is unavailable for scoring signals.
+- [x] Ensure checker can run even if renderer output is unavailable for scoring signals.
 - [x] Add safe defaults (`1`) for missing checker factors under timeout/fetch failure.
-- [ ] Testing: add end-to-end wiring tests with mocked external dependencies and confirm coverage target (>95% excluding Cloudflare R2 and Website Renderer logic).
+- [x] Testing: add end-to-end wiring tests with mocked external dependencies and confirm coverage target (>95% excluding Cloudflare R2 and Website Renderer logic).

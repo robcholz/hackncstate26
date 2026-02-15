@@ -156,6 +156,36 @@ describe("getBackendRenderResult", () => {
     }
   });
 
+  it("does not round fractional timeout below 1ms down to immediate fallback", async () => {
+    vi.useFakeTimers();
+    try {
+      const cache = createCacheMock({
+        link: "https://fractional-timeout.example.com",
+        image: "cached-base64",
+        createTime: 1
+      });
+      const checker = vi.fn(
+        () =>
+          new Promise<SusIndex>((resolve) => {
+            setTimeout(() => resolve(sampleSusIndex), 1);
+          })
+      );
+
+      const resultPromise = getBackendRenderResult(
+        { url: "https://fractional-timeout.example.com", timeout: 0.5 },
+        { cache, checker }
+      );
+      await vi.advanceTimersByTimeAsync(1);
+
+      await expect(resultPromise).resolves.toEqual({
+        image: "cached-base64",
+        susIndex: sampleSusIndex
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("uses safe checker defaults when checker exceeds timeout on cache miss", async () => {
     vi.useFakeTimers();
     try {
@@ -192,7 +222,7 @@ describe("getBackendRenderResult", () => {
     }
   });
 
-  it("propagates renderer failure without waiting for checker completion", async () => {
+  it("waits for checker completion before propagating renderer failure", async () => {
     vi.useFakeTimers();
     try {
       const cache = createCacheMock(null);
@@ -207,20 +237,23 @@ describe("getBackendRenderResult", () => {
           })
       );
 
+      const resultPromise = getBackendRenderResult(
+        { url: "https://slow-checker.example.com", timeout: 3000 },
+        { cache, rendererClient, checker }
+      );
+
       const raced = Promise.race([
-        getBackendRenderResult(
-          { url: "https://slow-checker.example.com", timeout: 3000 },
-          { cache, rendererClient, checker }
-        )
-          .then(() => "resolved")
-          .catch(() => "rejected"),
+        resultPromise.then(() => "resolved").catch(() => "rejected"),
         new Promise<string>((resolve) => {
           setTimeout(() => resolve("timeout"), 10);
         })
       ]);
 
       await vi.advanceTimersByTimeAsync(10);
-      await expect(raced).resolves.toBe("rejected");
+      await expect(raced).resolves.toBe("timeout");
+
+      await vi.advanceTimersByTimeAsync(1000);
+      await expect(resultPromise).rejects.toThrow("renderer unavailable");
     } finally {
       vi.useRealTimers();
     }

@@ -34,7 +34,7 @@ function getCheckerTimeoutMs(input: BackendRenderInput): number {
     return DEFAULT_CHECKER_TIMEOUT_MS;
   }
 
-  return Math.floor(input.timeout);
+  return Math.max(1, Math.floor(input.timeout));
 }
 
 async function getSusIndexSafe(
@@ -76,10 +76,19 @@ export async function getBackendRenderResult(
   }
 
   const rendererClient = deps.rendererClient ?? getOrCreateRendererClient();
-  const image = await rendererClient.getImage({
-    url: input.url,
-    timeout: input.timeout
-  });
+  let image: string;
+
+  try {
+    image = await rendererClient.getImage({
+      url: input.url,
+      timeout: input.timeout
+    });
+  } catch (error) {
+    // Ensure checker has a chance to finish/fallback even when rendering fails.
+    await susIndexPromise;
+    throw error;
+  }
+
   cache.putImage({ link: input.url, image });
 
   const susIndex = await susIndexPromise;

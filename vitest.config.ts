@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { coverageConfigDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
@@ -10,7 +10,18 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary", "html"],
-      reportsDirectory: "./coverage"
+      reportsDirectory: "./coverage",
+      exclude: [
+        ...coverageConfigDefaults.exclude,
+        "src/server/clients/renderer/**",
+        "src/server/clients/cloudflare-r2/**",
+        "src/server/services/image-cache/image-cache-r2-sync.ts"
+      ],
+      thresholds: {
+        statements: 95,
+        lines: 95,
+        functions: 95
+      }
     }
   }
 });
